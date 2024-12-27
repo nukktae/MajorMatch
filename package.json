@@ -1,0 +1,10 @@
+{
+  "dependencies": {
+    "nodemailer": "^6.9.16",
+    "react-error-boundary": "^5.0.0",
+    "react-icons": "^5.4.0"
+  },
+  "devDependencies": {
+    "@types/nodemailer": "^6.4.17"
+  }
+}

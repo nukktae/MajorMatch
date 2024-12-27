@@ -1,23 +1,27 @@
 import { auth } from '../config/firebase';
 import type { Profile } from '../types/Profile';
 
+const API_PORT = import.meta.env.VITE_API_PORT || '3000';
+const API_URL = `http://localhost:${API_PORT}/api/profile`;
+
 export const profileService = {
   async getProfile() {
     const user = auth.currentUser;
     if (!user) throw new Error('No authenticated user');
 
     const token = await user.getIdToken();
-    const response = await fetch(`http://localhost:5000/api/profile/${user.uid}`, {
+    const response = await fetch(API_URL, {
       method: 'GET',
-      credentials: 'include',
       headers: {
         'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        'Content-Type': 'application/json'
       }
     });
 
-    if (!response.ok) throw new Error('Failed to fetch profile');
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(error || 'Failed to fetch profile');
+    }
     return response.json();
   },
 
@@ -26,26 +30,33 @@ export const profileService = {
     if (!user) throw new Error('No authenticated user');
 
     const token = await user.getIdToken();
-    const response = await fetch('http://localhost:5000/api/profile/update', {
+    const response = await fetch(`${API_URL}/update`, {
       method: 'PUT',
-      credentials: 'include',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(data)
+      body: JSON.stringify({
+        major: data.major,
+        interests: data.interests || [],
+        custom_user_id: data.custom_user_id,
+        nickname: data.nickname
+      })
     });
 
-    if (!response.ok) throw new Error('Failed to update profile');
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(error || 'Failed to update profile');
+    }
     return response.json();
   },
 
-  async updateAssessmentResults(results: Profile['assessmentResults']) {
+  async updateAssessment(results: Profile['assessment_results']) {
     const user = auth.currentUser;
     if (!user) throw new Error('No authenticated user');
 
     const token = await user.getIdToken();
-    const response = await fetch('http://localhost:5000/api/profile/assessment', {
+    const response = await fetch(`${API_URL}/assessment`, {
       method: 'PUT',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -54,7 +65,10 @@ export const profileService = {
       body: JSON.stringify({ results })
     });
 
-    if (!response.ok) throw new Error('Failed to update assessment results');
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(error || 'Failed to update assessment');
+    }
     return response.json();
   },
 
@@ -63,7 +77,7 @@ export const profileService = {
     if (!user) throw new Error('No authenticated user');
 
     const token = await user.getIdToken();
-    const response = await fetch('http://localhost:5000/api/profile/assessment-results', {
+    const response = await fetch(`${API_URL}/assessment-results`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -72,7 +86,10 @@ export const profileService = {
       body: JSON.stringify({ dates })
     });
 
-    if (!response.ok) throw new Error('Failed to delete assessment results');
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(error || 'Failed to delete assessment results');
+    }
     return response.json();
   }
 }; 

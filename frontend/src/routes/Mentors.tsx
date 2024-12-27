@@ -2,96 +2,12 @@ import { motion } from 'framer-motion';
 import { PageLayout } from '../components/layout/PageLayout';
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-
-interface Mentor {
-  id: string;
-  name: string;
-  title: string;
-  field: string;
-  experience: string;
-  availability: string;
-  specialties: string[];
-  rating: number;
-  imageUrl: string;
-}
+import { mentors, type Mentor } from '../data/mentors';
 
 export function Mentors() {
   const location = useLocation();
   const [selectedField, setSelectedField] = useState(location.state?.field || '');
   const [searchQuery, setSearchQuery] = useState('');
-
-  // Mock mentor data - replace with API call later
-  const mentors: Mentor[] = [
-    {
-      id: '1',
-      name: 'Dr. Sarah Chen',
-      title: 'Senior Biomedical Engineer',
-      field: 'Biomedical Engineering',
-      experience: '12 years',
-      availability: 'Weekends',
-      specialties: ['Medical Devices', 'Tissue Engineering', 'Clinical Trials'],
-      rating: 4.9,
-      imageUrl: '/mentors/sarah.jpg'
-    },
-    {
-      id: '2',
-      name: 'Anu Bilegdemberel',
-      title: 'Fullstack Engineer',
-      field: 'Software Engineering',
-      experience: '3 years',
-      availability: 'Weekends',
-      specialties: [
-        'Study Abroad Consulting',
-        'Scholarship Applications',
-        'International Education',
-        'Full Stack Development',
-        'Korean Universities',
-        'US Universities',
-        'Chinese Universities'
-      ],
-      rating: 4.8,
-      imageUrl: '/mentors/anu.jpg'
-    },
-    {
-      id: '3',
-      name: 'Casey Lee',
-      title: 'UI/UX Designer & Psychology Specialist',
-      field: 'Design & Psychology',
-      experience: '5 years',
-      availability: 'Weekdays',
-      specialties: [
-        'User Interface Design',
-        'User Experience Research',
-        'Psychology in Design',
-        'Behavioral Design',
-        'Design Systems',
-        'User Testing',
-        'Design Psychology'
-      ],
-      rating: 4.9,
-      imageUrl: '/src/assets/videos/caseylee.png'
-    },
-    {
-      id: '4',
-      name: 'Kyeongin Nam',
-      title: 'Backend Engineer',
-      field: 'Software Engineering',
-      experience: '2 years',
-      availability: 'Weekends',
-      specialties: [
-        'Node.js Development',
-        'AWS Cloud Services',
-        'Backend Architecture',
-        'API Development',
-        'Database Design',
-        'International Work Experience',
-        'USA Tech Internship',
-        'Vietnam Tech Internship'
-      ],
-      rating: 4.8,
-      imageUrl: '/src/assets/videos/kyeongin.png'
-    }
-  ];
 
   const filteredMentors = mentors.filter(mentor => {
     const matchesField = !selectedField || mentor.field === selectedField;

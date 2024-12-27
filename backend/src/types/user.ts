@@ -2,6 +2,8 @@ export interface User {
   id: string;
   email: string;
   name: string;
+  custom_user_id?: string;
+  nickname?: string;
   photo_url?: string;
   created_at?: Date;
   updated_at?: Date;

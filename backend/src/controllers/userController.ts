@@ -4,7 +4,7 @@ import { User, UserProfile } from '../types/user.js';
 
 export const userController = {
   async createUser(req: Request, res: Response) {
-    const { id, email, name, photoURL } = req.body;
+    const { id, email, name: display_name, photoURL: photo_url } = req.body;
 
     try {
       const client = await pool.connect();
@@ -12,20 +12,28 @@ export const userController = {
       try {
         await client.query('BEGIN');
         
-        // Insert into users table
+        // Insert or update user
         const userResult = await client.query(
-          'INSERT INTO users (id, email, name, photo_url) VALUES ($1, $2, $3, $4) RETURNING *',
-          [id, email, name, photoURL]
+          `INSERT INTO users (id, email, display_name, photo_url)
+           VALUES ($1, $2, $3, $4)
+           ON CONFLICT (id) DO UPDATE
+           SET email = EXCLUDED.email,
+               display_name = EXCLUDED.display_name,
+               photo_url = EXCLUDED.photo_url
+           RETURNING *`,
+          [id, email, display_name, photo_url]
         );
 
-        // Create user profile
+        // Create profile if it doesn't exist
         await client.query(
-          'INSERT INTO user_profiles (user_id) VALUES ($1)',
+          `INSERT INTO user_profiles (user_id)
+           VALUES ($1)
+           ON CONFLICT (user_id) DO NOTHING`,
           [id]
         );
 
         await client.query('COMMIT');
-        res.status(201).json(userResult.rows[0]);
+        res.json(userResult.rows[0]);
       } catch (err) {
         await client.query('ROLLBACK');
         throw err;

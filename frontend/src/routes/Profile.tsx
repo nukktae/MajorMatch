@@ -1,35 +1,81 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, Component, ErrorInfo, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { profileService } from '../services/profile';
 import { auth } from '../config/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
+import { EditProfileForm } from '../components/EditProfileForm';
+import type { Profile } from '../types/Profile';
 
-interface UserProfile {
-  id: string;
-  name: string;
-  email: string;
-  major: string;
-  interests: string[];
-  completedAssessments: number;
-  earnedBadges: number;
-  assessmentResults?: {
-    date: string;
-    majors: {
-      name: string;
-      description: string;
-      skills: string[];
-    }[];
-  }[];
+function ErrorFallback({ error, resetErrorBoundary }: { error: Error; resetErrorBoundary: () => void }) {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center p-8 bg-white rounded-lg shadow-lg">
+        <h2 className="text-xl font-bold text-red-600 mb-4">Something went wrong</h2>
+        <p className="text-gray-600 mb-4">{error.message}</p>
+        <button
+          onClick={resetErrorBoundary}
+          className="px-4 py-2 bg-violet-600 text-white rounded hover:bg-violet-700"
+        >
+          Try again
+        </button>
+      </div>
+    </div>
+  );
+}
+
+interface ErrorBoundaryProps {
+  children: ReactNode;
+  FallbackComponent: React.ComponentType<{ error: Error; resetErrorBoundary: () => void }>;
+  onReset?: () => void;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+}
+
+class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('Error caught by boundary:', error, errorInfo);
+  }
+
+  resetErrorBoundary = () => {
+    this.setState({ hasError: false, error: null });
+    this.props.onReset?.();
+  };
+
+  render() {
+    if (this.state.hasError && this.state.error) {
+      return (
+        <this.props.FallbackComponent
+          error={this.state.error}
+          resetErrorBoundary={this.resetErrorBoundary}
+        />
+      );
+    }
+
+    return this.props.children;
+  }
 }
 
 export function Profile() {
   const navigate = useNavigate();
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [selectedResults, setSelectedResults] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -40,11 +86,12 @@ export function Profile() {
 
       try {
         setIsLoading(true);
+        setError(null);
         const userData = await profileService.getProfile();
         setProfile(userData);
       } catch (err) {
         console.error('Failed to load profile:', err);
-        navigate('/auth');
+        setError(err instanceof Error ? err.message : 'Failed to load profile');
       } finally {
         setIsLoading(false);
       }
@@ -56,15 +103,31 @@ export function Profile() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="w-16 h-16 relative">
-          <div className="absolute inset-0 rounded-full border-4 border-violet-200" />
-          <div className="absolute inset-0 rounded-full border-4 border-violet-600 border-t-transparent animate-spin" />
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-violet-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center p-8 bg-white rounded-lg shadow-lg">
+          <h2 className="text-xl font-bold text-red-600 mb-4">Error</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
         </div>
       </div>
     );
   }
 
-  if (!profile) return null;
+  if (!profile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center p-8">
+          <p className="text-gray-600">No profile data available</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleSaveProfile = async () => {
     if (!profile) return;
@@ -73,38 +136,43 @@ export function Profile() {
       setIsSaving(true);
       const updatedProfile = await profileService.updateProfile({
         major: profile.major,
-        interests: profile.interests
-      });
-      setProfile(updatedProfile);
-      setIsEditing(false);
+        interests: profile.interests || [],
+        custom_user_id: profile.custom_user_id,
+        nickname: profile.nickname
+      } as Partial<Profile>);
+      
+      if (updatedProfile) {
+        setProfile(updatedProfile);
+        setIsEditing(false);
+      }
     } catch (err) {
       console.error('Failed to update profile:', err);
+      setError(err instanceof Error ? err.message : 'Failed to update profile');
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleDeleteSelected = async () => {
-    if (!profile?.assessmentResults) return;
+    if (!profile?.assessment_results?.length) return;
     
     try {
       setIsSaving(true);
       await profileService.deleteAssessmentResults(selectedResults);
       
-      const updatedResults = profile.assessmentResults.filter((result) => 
+      const updatedResults = profile.assessment_results.filter((result) => 
         !selectedResults.includes(result.date)
       );
       
       setProfile(prev => prev ? {
         ...prev,
-        assessmentResults: updatedResults,
-        completedAssessments: prev.completedAssessments - selectedResults.length
+        assessment_results: updatedResults,
+        completed_assessments: prev.completed_assessments - selectedResults.length
       } : null);
       
       setSelectedResults([]);
     } catch (err) {
       console.error('Failed to delete results:', err);
-      // You could add a toast notification here
     } finally {
       setIsSaving(false);
     }
@@ -131,10 +199,12 @@ export function Profile() {
             <div className="flex items-center gap-4">
               <div className="w-20 h-20 rounded-full bg-gradient-to-br from-violet-600 to-fuchsia-500 
                            flex items-center justify-center text-white text-3xl font-bold">
-                {profile.name.charAt(0)}
+                {profile.display_name ? profile.display_name.charAt(0) : '?'}
               </div>
               <div>
-                <h1 className="text-2xl font-bold gradient-text">{profile.name}</h1>
+                <h1 className="text-2xl font-bold gradient-text">
+                  {profile.display_name || profile.nickname || 'User'}
+                </h1>
                 <p className="text-slate-600">{profile.email}</p>
               </div>
             </div>
@@ -158,50 +228,46 @@ export function Profile() {
               </div>
               <div className="p-4 bg-fuchsia-50 rounded-xl">
                 <h3 className="font-medium text-fuchsia-800 mb-1">Assessments</h3>
-                <p className="text-slate-700">{profile.completedAssessments} Completed</p>
+                <p className="text-slate-700">{profile.completed_assessments} Completed</p>
               </div>
               <div className="p-4 bg-purple-50 rounded-xl">
                 <h3 className="font-medium text-purple-800 mb-1">Badges</h3>
-                <p className="text-slate-700">{profile.earnedBadges} Earned</p>
+                <p className="text-slate-700">
+                  {profile.assessment_results?.length || 0} Earned
+                </p>
               </div>
             </div>
           )}
         </div>
 
-        {/* Edit Form - Only show when editing */}
-        {isEditing ? (
-          <div className="glass-card p-8">
+                {/* Edit Form - Only show when editing */}
+                {isEditing ? (
+          <div className="bg-white/90 backdrop-blur-none rounded-xl p-8 shadow-sm">
             <h2 className="text-xl font-semibold mb-6 gradient-text">Edit Profile</h2>
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Current Major
-                </label>
-                <input
-                  type="text"
-                  value={profile.major}
-                  onChange={(e) => setProfile(prev => prev ? {...prev, major: e.target.value} : null)}
-                  className="w-full px-4 py-2 rounded-xl border border-violet-200 focus:border-violet-400 
-                           focus:outline-none focus:ring-2 focus:ring-violet-200"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Interests
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {profile.interests?.map((interest, index) => (
-                    <span
-                      key={index}
-                      className="px-3 py-1 bg-violet-100 text-violet-700 
-                               rounded-full text-sm font-medium"
-                    >
-                      {interest}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
+            <EditProfileForm
+              currentMajor={profile.major || null}
+              currentInterests={profile.interests || []}
+              currentCustomId={profile.custom_user_id}
+              currentNickname={profile.nickname}
+              onSave={async (major, interests, customId, nickname) => {
+                try {
+                  setIsSaving(true);
+                  const updatedProfile = await profileService.updateProfile({
+                    major,
+                    interests,
+                    custom_user_id: customId,
+                    nickname
+                  });
+                  setProfile(updatedProfile);
+                  setIsEditing(false);
+                } catch (err) {
+                  console.error('Failed to update profile:', err);
+                } finally {
+                  setIsSaving(false);
+                }
+              }}
+              onCancel={() => setIsEditing(false)}
+            />
           </div>
         ) : (
           <>
@@ -225,25 +291,33 @@ export function Profile() {
             <div className="glass-card p-8">
               <h2 className="text-xl font-semibold mb-4 gradient-text">Recent Activity</h2>
               <div className="space-y-4">
-                <div className="flex items-center gap-4 p-4 bg-white/50 rounded-xl">
-                  <div className="w-10 h-10 rounded-lg bg-violet-100 text-violet-600 
-                               flex items-center justify-center">
-                    📊
+                {profile.assessment_results && profile.assessment_results.length > 0 ? (
+                  <div className="flex items-center gap-4 p-4 bg-white/50 rounded-xl">
+                    <div className="w-10 h-10 rounded-lg bg-violet-100 text-violet-600 
+                                 flex items-center justify-center">
+                      📊
+                    </div>
+                    <div>
+                      <h3 className="font-medium text-slate-800">Completed Career Assessment</h3>
+                      <p className="text-sm text-slate-600">
+                        {new Date(profile.assessment_results[0].date).toLocaleDateString()}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-medium text-slate-800">Completed Career Assessment</h3>
-                    <p className="text-sm text-slate-600">2 days ago</p>
+                ) : (
+                  <div className="text-center text-slate-600 py-4">
+                    No recent activity. Complete an assessment to get started!
                   </div>
-                </div>
+                )}
               </div>
             </div>
 
             {/* Past Assessment Results - Only show when not editing */}
-            {profile.assessmentResults && profile.assessmentResults.length > 0 && (
+            {profile && profile.assessment_results && profile.assessment_results.length > 0 && !isEditing && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="glass-card p-8"
+                className="glass-card p-8 mt-8"
               >
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-xl font-semibold gradient-text">Past Assessment Results</h2>
@@ -261,7 +335,7 @@ export function Profile() {
                   )}
                 </div>
                 <div className="space-y-6">
-                  {profile.assessmentResults.map((result, index) => (
+                  {profile.assessment_results.map((result, index) => (
                     <div 
                       key={index} 
                       className={`border-b border-slate-200 last:border-0 pb-6 last:pb-0
@@ -277,7 +351,7 @@ export function Profile() {
                                      focus:ring-violet-200"
                           />
                           <h3 className="font-medium text-slate-800">
-                            Career Assessment #{profile.assessmentResults!.length - index}
+                            Career Assessment #{profile.assessment_results.length - index}
                           </h3>
                         </div>
                         <span className="text-sm text-slate-600">
@@ -308,5 +382,17 @@ export function Profile() {
         )}
       </motion.div>
     </div>
+  );
+}
+
+// Wrap the export with ErrorBoundary
+export default function ProfileWithErrorBoundary() {
+  return (
+    <ErrorBoundary
+      FallbackComponent={ErrorFallback}
+      onReset={() => window.location.reload()}
+    >
+      <Profile />
+    </ErrorBoundary>
   );
 } 

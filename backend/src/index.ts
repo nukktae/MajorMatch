@@ -1,22 +1,25 @@
 import express from 'express';
-import { corsMiddleware } from './middleware/cors.js';
+import cors from 'cors';
 import dotenv from 'dotenv';
-import userRoutes from './routes/userRoutes.js';
-import profileRoutes from './routes/profileRoutes.js';
+import emailRouter from './routes/email.js';
+import { startServer } from './server.js';
 
 dotenv.config();
 
 const app = express();
-const port = process.env.PORT || 5000;
+const PORT = parseInt(process.env.PORT || '3000');
 
-// Apply CORS middleware before routes
-app.use(corsMiddleware);
+// Middleware
+app.use(cors());
 app.use(express.json());
 
-// Add GET route to profileRoutes
-app.use('/api/profile', profileRoutes);
-app.use('/api/users', userRoutes);
+// Routes
+app.use('/api', emailRouter);
 
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-}); 
+// Start server with existing configuration
+startServer(PORT).catch((err: Error) => {
+  console.error('Failed to start server:', err);
+  process.exit(1);
+});
+
+export default app; 

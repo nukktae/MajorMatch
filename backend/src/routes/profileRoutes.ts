@@ -5,7 +5,9 @@ import { authMiddleware } from '../middleware/auth.js';
 const router = Router();
 
 router.use(authMiddleware);
-router.get('/:id', profileController.getProfile);
+
+// Update routes to not use ID parameter
+router.get('/', profileController.getProfile);
 router.put('/update', profileController.updateProfile);
 router.put('/assessment', profileController.updateAssessment);
 router.delete('/assessment-results', profileController.deleteAssessmentResults);

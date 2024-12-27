@@ -12,6 +12,8 @@ import {
 } from 'firebase/auth';
 import { auth } from '../config/firebase';
 
+const API_PORT = import.meta.env.VITE_API_PORT || '3000';
+
 // Add persistence
 setPersistence(auth, browserLocalPersistence);
 
@@ -41,6 +43,28 @@ const handleAuthError = (error: AuthError) => {
   }
 };
 
+async function createUserInDatabase(user: User) {
+  const token = await user.getIdToken();
+  const response = await fetch(`http://localhost:${API_PORT}/api/users`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      id: user.uid,
+      email: user.email,
+      name: user.displayName || user.email?.split('@')[0],
+      photoURL: user.photoURL
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to create user in database');
+  }
+  return response.json();
+}
+
 export const authService = {
   async signUpWithEmail(email: string, password: string) {
     try {
@@ -58,9 +82,9 @@ export const authService = {
   },
 
   async signInWithGoogle() {
-    const { user } = await signInWithPopup(auth, googleProvider);
-    await this.createUserInDatabase(user);
-    return user;
+    const result = await signInWithPopup(auth, googleProvider);
+    await createUserInDatabase(result.user);
+    return result.user;
   },
 
   async signInWithFacebook() {
@@ -70,7 +94,7 @@ export const authService = {
   },
 
   async createUserInDatabase(user: User) {
-    const response = await fetch('http://localhost:5000/api/users', {
+    const response = await fetch(`http://localhost:${API_PORT}/api/users`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -82,11 +106,22 @@ export const authService = {
         photoURL: user.photoURL
       }),
     });
+
+    if (!response.ok) {
+      throw new Error('Failed to create user in database');
+    }
+
     return response.json();
   },
 
   async signOut() {
     await firebaseSignOut(auth);
     localStorage.removeItem('user');
+  },
+
+  async signInWithEmailPassword(email: string, password: string) {
+    const result = await signInWithEmailAndPassword(auth, email, password);
+    await createUserInDatabase(result.user);
+    return result.user;
   }
 }; 

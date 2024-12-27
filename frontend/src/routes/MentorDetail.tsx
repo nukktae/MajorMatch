@@ -1,110 +1,151 @@
-import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { PageLayout } from '../components/layout/PageLayout';
+import { mentors } from '../data/mentors';
+import { VideoBackground } from '../components/VideoBackground';
+import { BookingSection } from '../components/BookingSection';
+import mentorVideo from '../assets/videos/IMG_1482.mp4';
+import { MentorVideo } from '../components/MentorVideo';
+import caseyImage from '../assets/videos/caseylee.png';
 
 interface Mentor {
   id: string;
   name: string;
   title: string;
-  company: string;
-  education: string;
+  field: string;
   experience: string;
-  bio: string;
+  availability: string;
   specialties: string[];
-  availability: {
-    day: string;
-    slots: string[];
-  }[];
+  rating: number;
   imageUrl: string;
+  email: string;
 }
 
 export function MentorDetail() {
   const { id: mentorId } = useParams<{ id: string }>();
-  const [selectedDate, setSelectedDate] = useState<string>('');
-  const [selectedTime, setSelectedTime] = useState<string>('');
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [mentor, setMentor] = useState<Mentor | null>(null);
 
-  // This would normally come from an API call using mentorId
-  const mentor: Mentor = {
-    id: mentorId || '1',
-    name: 'Dr. Sarah Chen',
-    title: 'Senior Software Engineer',
-    company: 'Google',
-    education: 'Ph.D. in Computer Science, Stanford University',
-    experience: '10+ years in software development and AI',
-    bio: 'Dr. Chen specializes in artificial intelligence and machine learning, with extensive experience in developing scalable applications. She is passionate about mentoring the next generation of tech leaders.',
-    specialties: [
-      'Machine Learning',
-      'Software Architecture',
-      'Career Development',
-      'Technical Leadership'
-    ],
-    availability: [
-      {
-        day: '2024-02-20',
-        slots: ['10:00 AM', '2:00 PM', '4:00 PM']
-      },
-      {
-        day: '2024-02-21',
-        slots: ['11:00 AM', '3:00 PM']
-      }
-    ],
-    imageUrl: '/mentor-sarah.jpg'
-  };
-
-  const handleBooking = () => {
-    if (!selectedDate || !selectedTime) {
-      alert('Please select both date and time');
+  useEffect(() => {
+    const mentorFromState = location.state?.mentor as Mentor;
+    if (mentorFromState) {
+      setMentor(mentorFromState);
       return;
     }
-    // Handle booking logic here
-    console.log('Booking session for:', selectedDate, selectedTime);
+
+    const foundMentor = mentors.find(m => m.id === mentorId);
+    if (foundMentor) {
+      setMentor(foundMentor);
+    } else {
+      navigate('/mentors');
+    }
+  }, [mentorId, location.state, navigate]);
+
+  if (!mentor) {
+    return (
+      <PageLayout>
+        <div className="min-h-screen flex items-center justify-center">
+          <p className="text-slate-600">Loading...</p>
+        </div>
+      </PageLayout>
+    );
+  }
+
+  const handleBookSession = async (date: Date, time: string, message: string) => {
+    try {
+      const emailData = {
+        to: mentor.email,
+        subject: `New Mentoring Session Request - ${date.toLocaleDateString()}`,
+        html: `
+          <h2>New Mentoring Session Request</h2>
+          <p><strong>Student:</strong> ${localStorage.getItem('userName') || 'Student'}</p>
+          <p><strong>Date:</strong> ${date.toLocaleDateString()}</p>
+          <p><strong>Time:</strong> ${time}</p>
+          <p><strong>Message:</strong></p>
+          <p>${message}</p>
+          <p>Please respond to confirm or reschedule the session.</p>
+        `
+      };
+
+      const response = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(emailData)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.details || data.error || 'Failed to send email');
+      }
+
+      alert('Session request sent successfully! The mentor will respond shortly.');
+      
+    } catch (error) {
+      console.error('Error sending email:', error);
+      alert(error instanceof Error ? error.message : 'Failed to send session request. Please try again.');
+    }
   };
 
   return (
     <PageLayout>
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="max-w-6xl mx-auto px-4 py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="space-y-8"
         >
-          {/* Mentor Header */}
+          {/* Mentor Header with Video */}
           <div className="flex items-start gap-8">
-            <img
-              src={mentor.imageUrl}
-              alt={mentor.name}
-              className="w-32 h-32 rounded-xl object-cover"
-            />
+            {mentor.id === '2' ? ( // Casey Lee's ID
+              <div className="w-32 h-32">
+                <img
+                  src={caseyImage}
+                  alt={mentor.name}
+                  className="w-32 h-32 rounded-xl object-cover"
+                />
+              </div>
+            ) : mentor.imageUrl ? (
+              <div className="w-32 h-32">
+                <MentorVideo 
+                  videoSrc={mentorVideo} 
+                  className="w-32 h-32 rounded-xl"
+                />
+              </div>
+            ) : (
+              <div className="w-32 h-32 rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-500 
+                           flex items-center justify-center text-white text-4xl font-bold">
+                {mentor.name.charAt(0)}
+              </div>
+            )}
             <div>
               <h1 className="text-3xl font-bold gradient-text">{mentor.name}</h1>
               <p className="text-lg text-slate-600">{mentor.title}</p>
-              <p className="text-slate-600">{mentor.company}</p>
-              <p className="text-sm text-slate-500 mt-2">{mentor.education}</p>
+              <p className="text-slate-600">{mentor.field}</p>
+              <p className="text-sm text-slate-500 mt-2">Experience: {mentor.experience}</p>
             </div>
           </div>
 
-          {/* Mentor Details */}
-          <div className="grid md:grid-cols-2 gap-8">
-            <div className="space-y-6">
-              <div className="glass-card p-6">
-                <h2 className="text-xl font-semibold mb-4">About</h2>
-                <p className="text-slate-600">{mentor.bio}</p>
-              </div>
-
-              <div className="glass-card p-6">
-                <h2 className="text-xl font-semibold mb-4">Experience</h2>
-                <p className="text-slate-600">{mentor.experience}</p>
-              </div>
+          {/* Main Content Grid */}
+          <div className="grid grid-cols-12 gap-8">
+            {/* Left Column - Booking and Specialties */}
+            <div className="col-span-12 md:col-span-5 space-y-6">
+              <BookingSection 
+                mentorName={mentor.name}
+                onBook={handleBookSession}
+              />
 
               <div className="glass-card p-6">
                 <h2 className="text-xl font-semibold mb-4">Specialties</h2>
                 <div className="flex flex-wrap gap-2">
-                  {mentor.specialties.map((specialty: string, index: number) => (
+                  {mentor.specialties.map((specialty, index) => (
                     <span
                       key={index}
-                      className="px-3 py-1 bg-violet-100 text-violet-600 
-                               rounded-lg text-sm font-medium"
+                      className="px-3 py-1 bg-violet-100 text-violet-700 rounded-lg text-sm font-medium"
                     >
                       {specialty}
                     </span>
@@ -113,59 +154,62 @@ export function MentorDetail() {
               </div>
             </div>
 
-            {/* Booking Section */}
-            <div className="glass-card p-6 space-y-6">
-              <h2 className="text-xl font-semibold">Book a Session</h2>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Select Date
-                </label>
-                <select
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="w-full p-3 border border-slate-300 rounded-xl"
-                >
-                  <option value="">Choose a date</option>
-                  {mentor.availability.map((day) => (
-                    <option key={day.day} value={day.day}>
-                      {new Date(day.day).toLocaleDateString()}
-                    </option>
-                  ))}
-                </select>
+            {/* Right Column - Additional Information */}
+            <div className="col-span-12 md:col-span-7 space-y-6">
+              <div className="glass-card p-6">
+                <h2 className="text-xl font-semibold mb-4">About Me</h2>
+                <p className="text-slate-600 leading-relaxed">
+                  A passionate {mentor.field} professional with {mentor.experience} of experience.
+                  Dedicated to helping students navigate their academic and career paths.
+                </p>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Select Time
-                </label>
-                <select
-                  value={selectedTime}
-                  onChange={(e) => setSelectedTime(e.target.value)}
-                  className="w-full p-3 border border-slate-300 rounded-xl"
-                  disabled={!selectedDate}
-                >
-                  <option value="">Choose a time</option>
-                  {selectedDate &&
-                    mentor.availability
-                      .find((day) => day.day === selectedDate)
-                      ?.slots.map((time) => (
-                        <option key={time} value={time}>
-                          {time}
-                        </option>
-                      ))}
-                </select>
+              <div className="glass-card p-6">
+                <h2 className="text-xl font-semibold mb-4">Education & Experience</h2>
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="font-medium text-violet-700">Current Position</h3>
+                    <p className="text-slate-600">{mentor.title}</p>
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-violet-700">Years of Experience</h3>
+                    <p className="text-slate-600">{mentor.experience}</p>
+                  </div>
+                </div>
               </div>
 
-              <button
-                onClick={handleBooking}
-                disabled={!selectedDate || !selectedTime}
-                className="w-full py-3 px-4 bg-gradient-to-r from-violet-600 
-                         to-fuchsia-500 text-white font-medium rounded-xl 
-                         hover:opacity-90 transition-opacity disabled:opacity-50"
-              >
-                Book Session
-              </button>
+              <div className="glass-card p-6">
+                <h2 className="text-xl font-semibold mb-4">Mentoring Style</h2>
+                <ul className="space-y-3 text-slate-600">
+                  <li className="flex items-center gap-2">
+                    <span className="text-violet-500">•</span>
+                    Personalized guidance based on your goals
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-violet-500">•</span>
+                    Practical advice from industry experience
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-violet-500">•</span>
+                    Interactive sessions with real-world examples
+                  </li>
+                </ul>
+              </div>
+
+              <div className="glass-card p-6">
+                <h2 className="text-xl font-semibold mb-4">Availability & Sessions</h2>
+                <div className="space-y-3">
+                  <p className="text-slate-600">
+                    <span className="font-medium">Available:</span> {mentor.availability}
+                  </p>
+                  <p className="text-slate-600">
+                    <span className="font-medium">Session Duration:</span> 45 minutes
+                  </p>
+                  <p className="text-slate-600">
+                    <span className="font-medium">Session Format:</span> Video call
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </motion.div>
