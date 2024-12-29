@@ -10,22 +10,27 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@headlessui/react": "^2.2.0",
     "@heroicons/react": "^2.2.0",
     "@reduxjs/toolkit": "^2.5.0",
     "canvas-confetti": "^1.9.3",
     "date-fns": "^4.1.0",
     "framer-motion": "^11.15.0",
+    "multer": "^1.4.5-lts.1",
     "nodemailer": "^6.9.16",
     "openai": "^4.77.0",
     "react": "^18.3.1",
     "react-day-picker": "^9.4.4",
     "react-dom": "^18.3.1",
     "react-redux": "^9.2.0",
-    "react-router-dom": "^6.28.1"
+    "react-router-dom": "^6.28.1",
+    "uuid": "^11.0.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
     "@types/canvas-confetti": "^1.9.0",
+    "@types/multer": "^1.4.12",
+    "@types/node": "^22.10.2",
     "@types/nodemailer": "^6.4.17",
     "@types/react": "^18.3.17",
     "@types/react-dom": "^18.3.5",

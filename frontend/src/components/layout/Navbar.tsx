@@ -3,6 +3,9 @@ import { motion, useScroll, useTransform } from 'framer-motion'
 import { FiUsers, FiAward, FiBook, FiUser, FiLogOut, FiMenu } from 'react-icons/fi'
 import { useState, useEffect } from 'react'
 import { IconType } from 'react-icons'
+import { onAuthStateChanged } from 'firebase/auth'
+import { auth } from '../../config/firebase'
+import { authService } from '../../services/auth'
 
 // Create a wrapper component for icons
 const Icon = ({ icon: IconComponent, className }: { icon: IconType; className?: string }) => {
@@ -10,10 +13,30 @@ const Icon = ({ icon: IconComponent, className }: { icon: IconType; className?: 
 }
 
 export function Navbar() {
-  const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem('user') || 'null');
   const [isScrolled, setIsScrolled] = useState(false);
   const { scrollY } = useScroll();
+  const navigate = useNavigate();
+  
+  // Add auth state tracking
+  const [currentUser, setCurrentUser] = useState(auth.currentUser);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const handleSignOut = async () => {
+    try {
+      await authService.signOut();
+      localStorage.removeItem('user');
+      navigate('/auth');
+    } catch (err) {
+      console.error('Failed to sign out:', err);
+    }
+  };
 
   // Transform opacity based on scroll
   const navBackground = useTransform(
@@ -29,11 +52,6 @@ export function Navbar() {
     window.addEventListener('scroll', updateScroll);
     return () => window.removeEventListener('scroll', updateScroll);
   }, []);
-
-  const handleSignOut = () => {
-    localStorage.removeItem('user');
-    navigate('/');
-  };
 
   return (
     <motion.nav 
@@ -88,7 +106,7 @@ export function Navbar() {
             )}
 
             {/* User Section - Always Visible */}
-            {user ? (
+            {currentUser ? (
               <div className="flex items-center gap-4">
                 <Link 
                   to="/profile"
@@ -96,18 +114,17 @@ export function Navbar() {
                            transition-colors ${isScrolled ? 'text-sm' : ''}`}
                 >
                   <Icon icon={FiUser} />
-                  {!isScrolled && 'Hi, '}{user.name}
+                  {!isScrolled && 'Hi, '}{currentUser.displayName}
                 </Link>
-                {!isScrolled && (
-                  <button 
-                    onClick={handleSignOut}
-                    className="flex items-center gap-2 px-4 py-2 text-violet-600 hover:text-violet-700 
-                             font-medium hover:bg-violet-50 rounded-lg transition-colors"
-                  >
-                    <Icon icon={FiLogOut} />
-                    Sign Out
-                  </button>
-                )}
+                <button 
+                  onClick={handleSignOut}
+                  className="flex items-center gap-2 px-4 py-2 text-violet-600 
+                           hover:text-violet-700 font-medium hover:bg-violet-50 
+                           rounded-lg transition-colors"
+                >
+                  <Icon icon={FiLogOut} />
+                  Sign Out
+                </button>
               </div>
             ) : (
               <Link 

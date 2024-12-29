@@ -1,0 +1,4 @@
+# Ignore uploaded files
+uploads/profile-photos/*
+# Don't ignore .gitkeep
+!uploads/profile-photos/.gitkeep 

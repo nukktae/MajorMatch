@@ -8,7 +8,8 @@ import {
   User,
   AuthError,
   setPersistence,
-  browserLocalPersistence
+  browserLocalPersistence,
+  updateProfile
 } from 'firebase/auth';
 import { auth } from '../config/firebase';
 
@@ -44,32 +45,49 @@ const handleAuthError = (error: AuthError) => {
 };
 
 async function createUserInDatabase(user: User) {
-  const token = await user.getIdToken();
-  const response = await fetch(`http://localhost:${API_PORT}/api/users`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      id: user.uid,
-      email: user.email,
-      name: user.displayName || user.email?.split('@')[0],
-      photoURL: user.photoURL
-    })
-  });
+  try {
+    // Wait for Firebase to fully initialize the user
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    const token = await user.getIdToken();
+    const response = await fetch(`http://localhost:${API_PORT}/api/users`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        id: user.uid,
+        email: user.email,
+        name: user.displayName || user.email?.split('@')[0],
+        photoURL: user.photoURL
+      })
+    });
 
-  if (!response.ok) {
-    throw new Error('Failed to create user in database');
+    if (!response.ok) {
+      throw new Error('Failed to create user in database');
+    }
+    return response.json();
+  } catch (error) {
+    console.error('Error creating user in database:', error);
+    throw error;
   }
-  return response.json();
 }
 
 export const authService = {
-  async signUpWithEmail(email: string, password: string) {
+  async signUpWithEmail(email: string, password: string, name: string) {
     try {
+      // Create Firebase user
       const { user } = await createUserWithEmailAndPassword(auth, email, password);
-      await this.createUserInDatabase(user);
+      
+      // Update profile with name
+      await updateProfile(user, {
+        displayName: name
+      });
+      
+      // Create user in our database
+      await createUserInDatabase(user);
+      
       return user;
     } catch (error) {
       throw new Error(handleAuthError(error as AuthError));

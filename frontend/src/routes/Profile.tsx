@@ -1,11 +1,22 @@
 import { useState, useEffect, Component, ErrorInfo, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { profileService } from '../services/profile';
 import { auth } from '../config/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { EditProfileForm } from '../components/EditProfileForm';
 import type { Profile } from '../types/Profile';
+import { PhotoUpload } from '../components/PhotoUpload';
+import {
+  ExclamationTriangleIcon as ExclamationCircleIcon,
+  CameraIcon,
+  PencilIcon,
+  TrashIcon,
+  AcademicCapIcon,
+  ClipboardDocumentCheckIcon as ClipboardCheckIcon,
+  SparklesIcon
+} from '@heroicons/react/24/outline';
+import { DeleteConfirmModal } from '../components/DeleteConfirmModal';
 
 function ErrorFallback({ error, resetErrorBoundary }: { error: Error; resetErrorBoundary: () => void }) {
   return (
@@ -72,10 +83,11 @@ export function Profile() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [selectedResults, setSelectedResults] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [selectedResults, setSelectedResults] = useState<string[]>([]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -102,44 +114,53 @@ export function Profile() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-violet-600"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-violet-50 via-purple-50 to-fuchsia-50">
+        <div className="relative w-16 h-16">
+          <div className="absolute inset-0 rounded-full border-4 border-violet-200 animate-pulse" />
+          <div className="absolute inset-0 rounded-full border-4 border-violet-600 border-t-transparent animate-spin" />
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center p-8 bg-white rounded-lg shadow-lg">
-          <h2 className="text-xl font-bold text-red-600 mb-4">Error</h2>
-          <p className="text-gray-600 mb-4">{error}</p>
+      <motion.div 
+        initial={{ opacity: 0 }} 
+        animate={{ opacity: 1 }}
+        className="min-h-screen flex items-center justify-center bg-gradient-to-br from-violet-50 via-purple-50 to-fuchsia-50"
+      >
+        <div className="text-center p-8 bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-white/20">
+          <div className="text-red-500 mb-4">
+            <ExclamationCircleIcon className="h-12 w-12 mx-auto animate-bounce" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-3">Error Occurred</h2>
+          <p className="text-gray-600">{error}</p>
         </div>
-      </div>
+      </motion.div>
     );
   }
 
   if (!profile) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center p-8">
-          <p className="text-gray-600">No profile data available</p>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-indigo-50">
+        <div className="animate-pulse">
+          <div className="flex flex-col items-center space-y-4">
+            <div className="h-24 w-24 bg-gray-200 rounded-full"></div>
+            <div className="h-4 w-48 bg-gray-200 rounded"></div>
+            <div className="h-3 w-36 bg-gray-200 rounded"></div>
+          </div>
         </div>
       </div>
     );
   }
 
-  const handleSaveProfile = async () => {
+  const handleSaveProfile = async (data: Partial<Profile>) => {
     if (!profile) return;
 
     try {
       setIsSaving(true);
-      const updatedProfile = await profileService.updateProfile({
-        major: profile.major,
-        interests: profile.interests || [],
-        custom_user_id: profile.custom_user_id,
-        nickname: profile.nickname
-      } as Partial<Profile>);
+      const updatedProfile = await profileService.updateProfile(data);
       
       if (updatedProfile) {
         setProfile(updatedProfile);
@@ -154,7 +175,7 @@ export function Profile() {
   };
 
   const handleDeleteSelected = async () => {
-    if (!profile?.assessment_results?.length) return;
+    if (!profile?.assessment_results?.length || selectedResults.length === 0) return;
     
     try {
       setIsSaving(true);
@@ -167,7 +188,7 @@ export function Profile() {
       setProfile(prev => prev ? {
         ...prev,
         assessment_results: updatedResults,
-        completed_assessments: prev.completed_assessments - selectedResults.length
+        completed_assessments: (prev.completed_assessments || 0) - selectedResults.length
       } : null);
       
       setSelectedResults([]);
@@ -179,209 +200,156 @@ export function Profile() {
   };
 
   const toggleResultSelection = (date: string) => {
-    setSelectedResults(prev => 
+    setSelectedResults((prev: string[]) => 
       prev.includes(date) 
-        ? prev.filter(d => d !== date)
+        ? prev.filter((d: string) => d !== date)
         : [...prev, date]
     );
   };
 
+  const handleDeleteAccount = async () => {
+    try {
+      setIsSaving(true);
+      await profileService.deleteUser();
+      navigate('/auth');
+    } catch (err) {
+      console.error('Failed to delete account:', err);
+      setError(err instanceof Error ? err.message : 'Failed to delete account');
+    } finally {
+      setIsSaving(false);
+      setShowDeleteConfirm(false);
+    }
+  };
+
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="space-y-8"
-      >
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="min-h-screen bg-gradient-to-br from-slate-50 to-violet-50/30 py-8 px-4"
+    >
+      <div className="max-w-5xl mx-auto space-y-6">
         {/* Profile Header */}
-        <div className="glass-card p-8">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-4">
-              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-violet-600 to-fuchsia-500 
-                           flex items-center justify-center text-white text-3xl font-bold">
-                {profile.display_name ? profile.display_name.charAt(0) : '?'}
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold gradient-text">
-                  {profile.display_name || profile.nickname || 'User'}
-                </h1>
-                <p className="text-slate-600">{profile.email}</p>
-              </div>
-            </div>
-            <button
-              onClick={() => isEditing ? handleSaveProfile() : setIsEditing(true)}
-              disabled={isSaving}
-              className="px-4 py-2 text-violet-600 hover:text-violet-700 
-                      font-medium rounded-xl border border-violet-200 
-                      hover:border-violet-300 transition-colors disabled:opacity-50"
-            >
-              {isSaving ? 'Saving...' : isEditing ? 'Save Changes' : 'Edit Profile'}
-            </button>
-          </div>
+        <motion.div 
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className="relative bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-slate-100"
+        >
+          <div className="p-6">
+            <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
+              <motion.div 
+                whileHover={{ scale: 1.02 }}
+                className="relative"
+              >
+                <PhotoUpload
+                  currentPhotoUrl={profile?.photo_url}
+                  onPhotoUpdate={(url) => {
+                    console.log('Photo updated:', url);
+                    setProfile(prev => {
+                      const updated = prev ? {...prev, photo_url: url} : null;
+                      console.log('Updated profile:', updated);
+                      return updated;
+                    });
+                  }}
+                  className="h-24 w-24 rounded-xl ring-2 ring-slate-100 shadow-sm object-cover"
+                />
+                <motion.div 
+                  whileHover={{ scale: 1.05 }}
+                  className="absolute -bottom-2 -right-2 bg-violet-500 text-white p-2 rounded-lg shadow-sm"
+                >
+                  <CameraIcon className="h-4 w-4" />
+                </motion.div>
+              </motion.div>
 
-          {/* Progress Overview - Only show when not editing */}
-          {!isEditing && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="p-4 bg-violet-50 rounded-xl">
-                <h3 className="font-medium text-violet-800 mb-1">Current Major</h3>
-                <p className="text-slate-700">{profile.major}</p>
-              </div>
-              <div className="p-4 bg-fuchsia-50 rounded-xl">
-                <h3 className="font-medium text-fuchsia-800 mb-1">Assessments</h3>
-                <p className="text-slate-700">{profile.completed_assessments} Completed</p>
-              </div>
-              <div className="p-4 bg-purple-50 rounded-xl">
-                <h3 className="font-medium text-purple-800 mb-1">Badges</h3>
-                <p className="text-slate-700">
-                  {profile.assessment_results?.length || 0} Earned
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-
-                {/* Edit Form - Only show when editing */}
-                {isEditing ? (
-          <div className="bg-white/90 backdrop-blur-none rounded-xl p-8 shadow-sm">
-            <h2 className="text-xl font-semibold mb-6 gradient-text">Edit Profile</h2>
-            <EditProfileForm
-              currentMajor={profile.major || null}
-              currentInterests={profile.interests || []}
-              currentCustomId={profile.custom_user_id}
-              currentNickname={profile.nickname}
-              onSave={async (major, interests, customId, nickname) => {
-                try {
-                  setIsSaving(true);
-                  const updatedProfile = await profileService.updateProfile({
-                    major,
-                    interests,
-                    custom_user_id: customId,
-                    nickname
-                  });
-                  setProfile(updatedProfile);
-                  setIsEditing(false);
-                } catch (err) {
-                  console.error('Failed to update profile:', err);
-                } finally {
-                  setIsSaving(false);
-                }
-              }}
-              onCancel={() => setIsEditing(false)}
-            />
-          </div>
-        ) : (
-          <>
-            {/* Interests Section */}
-            <div className="glass-card p-8">
-              <h2 className="text-xl font-semibold mb-4 gradient-text">Interests</h2>
-              <div className="flex flex-wrap gap-2">
-                {profile.interests?.map((interest, index) => (
-                  <span
-                    key={index}
-                    className="px-3 py-1 bg-violet-100 text-violet-700 
-                             rounded-full text-sm font-medium"
-                  >
-                    {interest}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            {/* Recent Activity */}
-            <div className="glass-card p-8">
-              <h2 className="text-xl font-semibold mb-4 gradient-text">Recent Activity</h2>
-              <div className="space-y-4">
-                {profile.assessment_results && profile.assessment_results.length > 0 ? (
-                  <div className="flex items-center gap-4 p-4 bg-white/50 rounded-xl">
-                    <div className="w-10 h-10 rounded-lg bg-violet-100 text-violet-600 
-                                 flex items-center justify-center">
-                      📊
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-slate-800">Completed Career Assessment</h3>
-                      <p className="text-sm text-slate-600">
-                        {new Date(profile.assessment_results[0].date).toLocaleDateString()}
-                      </p>
-                    </div>
+              <div className="flex-1 space-y-4">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                  <div className="text-center md:text-left">
+                    <h1 className="text-2xl font-semibold text-slate-800">
+                      {profile?.display_name || profile?.nickname || auth.currentUser?.displayName || 'Anonymous'}
+                    </h1>
+                    <p className="text-sm text-slate-500">{profile?.email}</p>
+                    <p className="text-xs text-violet-500 font-medium">@{profile?.custom_user_id || 'username'}</p>
                   </div>
-                ) : (
-                  <div className="text-center text-slate-600 py-4">
-                    No recent activity. Complete an assessment to get started!
+                  
+                  <div className="flex gap-2">
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => setIsEditing(true)}
+                      className="inline-flex items-center px-4 py-2 rounded-lg bg-violet-500 text-white hover:bg-violet-600 transition-colors shadow-sm text-sm"
+                    >
+                      <PencilIcon className="h-3.5 w-3.5 mr-1.5" />
+                      Edit
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => setShowDeleteConfirm(true)}
+                      className="inline-flex items-center px-4 py-2 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-colors text-sm"
+                    >
+                      <TrashIcon className="h-3.5 w-3.5 mr-1.5" />
+                      Delete
+                    </motion.button>
                   </div>
-                )}
+                </div>
               </div>
             </div>
+          </div>
+        </motion.div>
 
-            {/* Past Assessment Results - Only show when not editing */}
-            {profile && profile.assessment_results && profile.assessment_results.length > 0 && !isEditing && (
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <AnimatePresence>
+            {[
+              {
+                title: "Current Major",
+                value: profile?.major || 'Not Set',
+                icon: <AcademicCapIcon className="h-5 w-5 text-violet-500" />,
+              },
+              {
+                title: "Assessments",
+                value: `${profile?.completed_assessments || 0} Completed`,
+                icon: <ClipboardCheckIcon className="h-5 w-5 text-emerald-500" />,
+              },
+              {
+                title: "Interests",
+                value: `${profile?.interests?.length || 0} Selected`,
+                icon: <SparklesIcon className="h-5 w-5 text-blue-500" />,
+              }
+            ].map((stat, index) => (
               <motion.div
+                key={stat.title}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="glass-card p-8 mt-8"
+                transition={{ delay: index * 0.1 }}
+                whileHover={{ scale: 1.01 }}
+                className="bg-white/80 backdrop-blur-sm rounded-xl p-4 border border-slate-100 shadow-sm"
               >
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-xl font-semibold gradient-text">Past Assessment Results</h2>
-                  {selectedResults.length > 0 && (
-                    <button
-                      onClick={handleDeleteSelected}
-                      disabled={isSaving}
-                      className="px-4 py-2 text-red-600 hover:text-red-700 
-                               font-medium rounded-xl border border-red-200 
-                               hover:border-red-300 transition-colors
-                               disabled:opacity-50"
-                    >
-                      {isSaving ? 'Deleting...' : `Delete Selected (${selectedResults.length})`}
-                    </button>
-                  )}
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-slate-600">{stat.title}</span>
+                  {stat.icon}
                 </div>
-                <div className="space-y-6">
-                  {profile.assessment_results.map((result, index) => (
-                    <div 
-                      key={index} 
-                      className={`border-b border-slate-200 last:border-0 pb-6 last:pb-0
-                                 ${selectedResults.includes(result.date) ? 'bg-violet-50/50' : ''}`}
-                    >
-                      <div className="flex justify-between items-start mb-4">
-                        <div className="flex items-center gap-3">
-                          <input
-                            type="checkbox"
-                            checked={selectedResults.includes(result.date)}
-                            onChange={() => toggleResultSelection(result.date)}
-                            className="w-4 h-4 rounded border-violet-300 text-violet-600 
-                                     focus:ring-violet-200"
-                          />
-                          <h3 className="font-medium text-slate-800">
-                            Career Assessment #{profile.assessment_results.length - index}
-                          </h3>
-                        </div>
-                        <span className="text-sm text-slate-600">
-                          {new Date(result.date).toLocaleDateString()}
-                        </span>
-                      </div>
-                      <div className="space-y-4">
-                        {result.majors.map((major, idx) => (
-                          <div key={idx} className="bg-white/50 rounded-xl p-4">
-                            <h4 className="font-medium text-violet-700 mb-2">{major.name}</h4>
-                            <p className="text-sm text-slate-600 mb-3">{major.description}</p>
-                            <div className="flex flex-wrap gap-2">
-                              {major.skills.map((skill, i) => (
-                                <span key={i} className="px-2 py-1 bg-violet-100 text-violet-700 rounded-full text-xs">
-                                  {skill}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <p className="text-base font-medium text-slate-800">{stat.value}</p>
               </motion.div>
-            )}
-          </>
-        )}
-      </motion.div>
-    </div>
+            ))}
+          </AnimatePresence>
+        </div>
+      </div>
+
+      {/* Keep existing modals */}
+      <EditProfileForm
+        isOpen={isEditing}
+        onClose={() => setIsEditing(false)}
+        onSave={handleSaveProfile}
+        profile={profile}
+        isLoading={isSaving}
+      />
+      <DeleteConfirmModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDeleteAccount}
+        isLoading={isSaving}
+      />
+    </motion.div>
   );
 }
 

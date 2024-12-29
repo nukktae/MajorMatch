@@ -8,8 +8,13 @@ import { FiMail, FiLock, FiUser, FiAlertCircle, FiLoader } from 'react-icons/fi'
 import { IconType } from 'react-icons';
 
 // Icon wrapper component
-const Icon = ({ icon: IconComponent }: { icon: IconType }) => {
-  return <IconComponent size={20} />;
+const Icon = ({ icon: IconComponent, className }: { icon: IconType; className?: string }) => {
+  const iconSize = className?.includes('w-5') ? 20 : 16;
+  return (
+    <span className={className}>
+      <IconComponent size={iconSize} />
+    </span>
+  );
 };
 
 interface FormData {
@@ -49,23 +54,19 @@ export function Auth() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setIsLoading(true);
-    
     try {
-      const user = isLogin 
-        ? await authService.signInWithEmail(formData.email, formData.password)
-        : await authService.signUpWithEmail(formData.email, formData.password);
-        
-      localStorage.setItem('user', JSON.stringify({
-        id: user.uid,
-        email: user.email,
-        name: formData.name || user.displayName || user.email?.split('@')[0]
-      }));
+      setIsLoading(true);
+      setError('');
       
-      navigate('/');
-    } catch (err: any) {
-      setError(err.message);
+      if (isLogin) {
+        await authService.signInWithEmail(formData.email, formData.password);
+      } else {
+        await authService.signUpWithEmail(formData.email, formData.password, formData.name);
+      }
+      
+      navigate('/profile');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Authentication failed');
     } finally {
       setIsLoading(false);
     }
@@ -130,7 +131,7 @@ export function Auth() {
                 exit={{ opacity: 0, y: -10 }}
                 className="p-4 rounded-xl bg-red-50 flex items-center gap-3"
               >
-                <FiAlertCircle className="w-5 h-5 text-red-500" />
+                <Icon icon={FiAlertCircle} className="w-5 h-5 text-red-500" />
                 <p className="text-red-600 text-sm">{error}</p>
               </motion.div>
             )}
