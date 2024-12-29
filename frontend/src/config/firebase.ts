@@ -10,10 +10,15 @@ const firebaseConfig = {
   appId: "1:413672111810:web:2fbf572265181e0196455b"
 };
 
-// Initialize Firebase only if config is valid
 if (!firebaseConfig.apiKey) {
-  throw new Error('Firebase API key is missing. Check your environment variables.');
+  console.error('Firebase API key is missing');
+  throw new Error('Firebase API key is missing');
 }
 
 const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
+const auth = getAuth(app);
+
+console.log('Firebase config:', firebaseConfig);
+console.log('Firebase initialized');
+
+export { auth };

@@ -1,36 +1,33 @@
 import { auth } from '../config/firebase';
 import type { Profile } from '../types/Profile';
-
-const API_PORT = import.meta.env.VITE_API_PORT || '3000';
-const API_URL = `http://localhost:${API_PORT}/api/profile`;
+import { 
+  EmailAuthProvider,
+  reauthenticateWithCredential,
+  reauthenticateWithPopup,
+  GoogleAuthProvider
+} from 'firebase/auth';
+import { API_BASE_URL } from '../config/api';
 
 export const profileService = {
   async getProfile() {
     const user = auth.currentUser;
     if (!user) throw new Error('No authenticated user');
 
-    try {
-      const token = await user.getIdToken();
-      const response = await fetch(API_URL, {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+    const token = await user.getIdToken();
+    const response = await fetch(`${API_BASE_URL}/api/profile`, {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
 
-      if (!response.ok) {
-        const error = await response.text();
-        throw new Error(error || 'Failed to fetch profile');
-      }
-      return response.json();
-    } catch (error) {
-      if (error instanceof TypeError && error.message === 'Failed to fetch') {
-        throw new Error('Unable to connect to server. Please check if the backend is running.');
-      }
-      throw error;
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(error || 'Failed to fetch profile');
     }
+    return response.json();
   },
 
   async updateProfile(data: Partial<Profile>) {
@@ -38,7 +35,7 @@ export const profileService = {
     if (!user) throw new Error('No authenticated user');
 
     const token = await user.getIdToken();
-    const response = await fetch(`${API_URL}/update`, {
+    const response = await fetch(`${API_BASE_URL}/api/profile/update`, {
       method: 'PUT',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -64,7 +61,7 @@ export const profileService = {
     if (!user) throw new Error('No authenticated user');
 
     const token = await user.getIdToken();
-    const response = await fetch(`${API_URL}/assessment`, {
+    const response = await fetch(`${API_BASE_URL}/api/profile/assessment`, {
       method: 'PUT',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -85,7 +82,7 @@ export const profileService = {
     if (!user) throw new Error('No authenticated user');
 
     const token = await user.getIdToken();
-    const response = await fetch(`${API_URL}/assessment-results`, {
+    const response = await fetch(`${API_BASE_URL}/api/profile/assessment-results`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -106,7 +103,7 @@ export const profileService = {
     if (!user) throw new Error('No authenticated user');
 
     const token = await user.getIdToken();
-    const response = await fetch(`${API_URL}/check-custom-id?custom_user_id=${encodeURIComponent(customId)}`, {
+    const response = await fetch(`${API_BASE_URL}/api/profile/check-custom-id?custom_user_id=${encodeURIComponent(customId)}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       }
@@ -126,7 +123,7 @@ export const profileService = {
     const formData = new FormData();
     formData.append('photo', file);
 
-    const response = await fetch(`${API_URL}/photo`, {
+    const response = await fetch(`${API_BASE_URL}/api/profile/photo`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`
@@ -145,22 +142,41 @@ export const profileService = {
     const user = auth.currentUser;
     if (!user) throw new Error('No authenticated user');
 
-    const token = await user.getIdToken();
-    const response = await fetch(`${API_URL}/delete-user`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
+    try {
+      const token = await user.getIdToken();
+      const response = await fetch(`${API_BASE_URL}/api/profile/delete-user`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete user from database');
       }
-    });
 
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(error || 'Failed to delete user');
+      try {
+        await user.delete();
+      } catch (error: any) {
+        if (error.code === 'auth/requires-recent-login') {
+          // For Google-authenticated users
+          if (user.providerData[0]?.providerId === 'google.com') {
+            const provider = new GoogleAuthProvider();
+            await reauthenticateWithPopup(user, provider);
+          } else {
+            throw new Error('Please log out and log in again to delete your account');
+          }
+          // Try deleting again after re-authentication
+          await user.delete();
+        } else {
+          throw error;
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      throw error;
     }
-
-    // Delete Firebase user after successful backend deletion
-    await user.delete();
   },
 
   async checkUsernameAvailability(username: string): Promise<boolean> {
@@ -169,7 +185,7 @@ export const profileService = {
       if (!user) throw new Error('No authenticated user');
 
       const token = await user.getIdToken();
-      const response = await fetch(`${API_URL}/check-custom-id?custom_user_id=${encodeURIComponent(username)}`, {
+      const response = await fetch(`${API_BASE_URL}/api/profile/check-custom-id?custom_user_id=${encodeURIComponent(username)}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

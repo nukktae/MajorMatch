@@ -1,4 +1,4 @@
-import App from './App'
+import { App } from './App'
 import { Home } from './routes/Home'
 import { Auth } from './routes/Auth'
 import { Profile } from './routes/Profile'
@@ -11,6 +11,8 @@ import { MentorDetail } from './routes/MentorDetail'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { PageLayout } from './components/layout/PageLayout'
 import { RouteObject } from 'react-router-dom'
+import { LearnMore } from './routes/LearnMore'
+import { MentorSignup } from './routes/MentorSignup'
 
 export const routes: RouteObject[] = [
   {
@@ -19,7 +21,11 @@ export const routes: RouteObject[] = [
     children: [
       {
         path: 'auth',
-        element: <Auth />
+        element: <PageLayout><Auth /></PageLayout>
+      },
+      {
+        path: 'mentor-signup',
+        element: <PageLayout><MentorSignup /></PageLayout>
       },
       {
         path: '',
@@ -52,6 +58,14 @@ export const routes: RouteObject[] = [
       {
         path: 'mentors/:id',
         element: <ProtectedRoute><PageLayout><MentorDetail /></PageLayout></ProtectedRoute>
+      },
+      {
+        path: 'learn-more',
+        element: <PageLayout><LearnMore /></PageLayout>
+      },
+      {
+        path: '*',
+        element: <PageLayout><Home /></PageLayout>
       }
     ]
   }

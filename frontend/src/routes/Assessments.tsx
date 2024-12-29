@@ -1,6 +1,5 @@
 import { motion } from 'framer-motion';
 import { useState } from 'react';
-import { PageLayout } from '../components/layout/PageLayout';
 import { useNavigate } from 'react-router-dom';
 import { ASSESSMENT_QUESTIONS } from '../components/AssessmentQuestion';
 import { FiFileText, FiZap, FiTarget } from 'react-icons/fi';
@@ -43,7 +42,7 @@ export function Assessments() {
   const currentQuestion = ASSESSMENT_QUESTIONS.find(q => q.id === currentStep);
 
   return (
-    <PageLayout>
+    <>
       {!started ? (
         <div className="max-w-4xl mx-auto px-4 py-8">
           <motion.div
@@ -177,6 +176,6 @@ export function Assessments() {
           )}
         </div>
       )}
-    </PageLayout>
+    </>
   );
 } 

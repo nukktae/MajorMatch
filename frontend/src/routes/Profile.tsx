@@ -1,4 +1,4 @@
-import { useState, useEffect, Component, ErrorInfo, ReactNode } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { profileService } from '../services/profile';
@@ -17,66 +17,32 @@ import {
 } from '@heroicons/react/24/outline';
 import { DeleteConfirmModal } from '../components/DeleteConfirmModal';
 import { API_BASE_URL } from '../config/api';
+import { authService } from '../services/auth';
+import { ErrorBoundary as ReactErrorBoundary } from 'react-error-boundary';
 
-function ErrorFallback({ error, resetErrorBoundary }: { error: Error; resetErrorBoundary: () => void }) {
+interface FallbackProps {
+  error: Error;
+  resetErrorBoundary: () => void;
+}
+
+function ErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="text-center p-8 bg-white rounded-lg shadow-lg">
-        <h2 className="text-xl font-bold text-red-600 mb-4">Something went wrong</h2>
-        <p className="text-gray-600 mb-4">{error.message}</p>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-violet-50 via-purple-50 to-fuchsia-50">
+      <div className="text-center space-y-4">
+        <div className="text-red-500 mb-4">
+          <ExclamationCircleIcon className="h-12 w-12 mx-auto animate-bounce" />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-800 mb-3">Error Occurred</h2>
+        <p className="text-gray-600">{error.message}</p>
         <button
           onClick={resetErrorBoundary}
-          className="px-4 py-2 bg-violet-600 text-white rounded hover:bg-violet-700"
+          className="px-4 py-2 bg-violet-500 text-white rounded-lg hover:bg-violet-600 transition-colors"
         >
-          Try again
+          Try Again
         </button>
       </div>
     </div>
   );
-}
-
-interface ErrorBoundaryProps {
-  children: ReactNode;
-  FallbackComponent: React.ComponentType<{ error: Error; resetErrorBoundary: () => void }>;
-  onReset?: () => void;
-}
-
-interface ErrorBoundaryState {
-  hasError: boolean;
-  error: Error | null;
-}
-
-class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  constructor(props: ErrorBoundaryProps) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
-
-  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
-    return { hasError: true, error };
-  }
-
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Error caught by boundary:', error, errorInfo);
-  }
-
-  resetErrorBoundary = () => {
-    this.setState({ hasError: false, error: null });
-    this.props.onReset?.();
-  };
-
-  render() {
-    if (this.state.hasError && this.state.error) {
-      return (
-        <this.props.FallbackComponent
-          error={this.state.error}
-          resetErrorBoundary={this.resetErrorBoundary}
-        />
-      );
-    }
-
-    return this.props.children;
-  }
 }
 
 export function Profile() {
@@ -157,7 +123,7 @@ export function Profile() {
 
   const handleSaveProfile = async (data: Partial<Profile>) => {
     if (!profile) return;
-
+    
     try {
       setIsSaving(true);
       const updatedProfile = await profileService.updateProfile(data);
@@ -214,7 +180,15 @@ export function Profile() {
       navigate('/auth');
     } catch (err) {
       console.error('Failed to delete account:', err);
-      setError(err instanceof Error ? err.message : 'Failed to delete account');
+      if (err instanceof Error && err.message.includes('log out and log in again')) {
+        // Force logout and redirect to auth page
+        await authService.signOut();
+        navigate('/auth', { 
+          state: { message: 'Please log in again to delete your account' }
+        });
+      } else {
+        setError(err instanceof Error ? err.message : 'Failed to delete account');
+      }
     } finally {
       setIsSaving(false);
       setShowDeleteConfirm(false);
@@ -326,6 +300,116 @@ export function Profile() {
             ))}
           </AnimatePresence>
         </div>
+
+        {/* Interests Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-slate-100 shadow-sm"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-slate-800">Your Interests</h2>
+            <SparklesIcon className="h-5 w-5 text-violet-500" />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {profile?.interests?.map((interest) => (
+              <span
+                key={interest}
+                className="px-4 py-2 bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 
+                         text-violet-700 rounded-xl text-sm font-medium border border-violet-100"
+              >
+                {interest}
+              </span>
+            )) || (
+              <p className="text-slate-500 text-sm">No interests selected yet</p>
+            )}
+          </div>
+        </motion.div>
+
+        {/* Assessment Results Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-slate-100 shadow-sm mt-6"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-slate-800">Assessment History</h2>
+            <div className="flex items-center gap-2">
+              {selectedResults.length > 0 && (
+                <motion.button
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  onClick={handleDeleteSelected}
+                  className="px-3 py-1.5 bg-red-50 text-red-500 rounded-lg text-sm font-medium 
+                           hover:bg-red-100 transition-colors flex items-center gap-1"
+                >
+                  <TrashIcon className="h-4 w-4" />
+                  Delete Selected
+                </motion.button>
+              )}
+              <ClipboardCheckIcon className="h-5 w-5 text-emerald-500" />
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {profile?.assessment_results?.length ? (
+              profile.assessment_results.map((result) => (
+                <motion.div
+                  key={result.date}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className={`p-4 rounded-xl border transition-colors ${
+                    selectedResults.includes(result.date)
+                      ? 'bg-violet-50 border-violet-200'
+                      : 'bg-white border-slate-100 hover:border-violet-200'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedResults.includes(result.date)}
+                        onChange={() => toggleResultSelection(result.date)}
+                        className="w-4 h-4 text-violet-500 rounded border-slate-300 
+                                 focus:ring-violet-500"
+                      />
+                      <div>
+                        <p className="text-sm font-medium text-slate-700">
+                          {new Date(result.date).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          })}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          Recommended Major: {result.majors[0]?.name || 'Not available'}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => navigate('/assessment-results', { 
+                        state: { results: result } 
+                      })}
+                      className="text-violet-500 hover:text-violet-600 text-sm font-medium"
+                    >
+                      View Details →
+                    </button>
+                  </div>
+                </motion.div>
+              ))
+            ) : (
+              <div className="text-center py-8 text-slate-500">
+                <p>No assessments completed yet</p>
+                <button
+                  onClick={() => navigate('/assessments')}
+                  className="mt-2 text-violet-500 hover:text-violet-600 text-sm font-medium"
+                >
+                  Take Your First Assessment →
+                </button>
+              </div>
+            )}
+          </div>
+        </motion.div>
       </div>
 
       <EditProfileForm
@@ -347,11 +431,13 @@ export function Profile() {
 
 export default function ProfileWithErrorBoundary() {
   return (
-    <ErrorBoundary
+    <ReactErrorBoundary
       FallbackComponent={ErrorFallback}
-      onReset={() => window.location.reload()}
+      onReset={() => {
+        window.location.reload();
+      }}
     >
       <Profile />
-    </ErrorBoundary>
+    </ReactErrorBoundary>
   );
 } 

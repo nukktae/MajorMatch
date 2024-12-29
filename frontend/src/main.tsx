@@ -4,14 +4,18 @@ import { Provider } from 'react-redux'
 import { store } from './store/index'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import { routes } from './routes'
+import { auth } from './config/firebase'
 import './index.css'
 
-const router = createBrowserRouter(routes)
-
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <Provider store={store}>
-      <RouterProvider router={router} />
-    </Provider>
-  </StrictMode>
-)
+// Wait for Firebase Auth to initialize
+auth.onAuthStateChanged(() => {
+  const router = createBrowserRouter(routes)
+  
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <Provider store={store}>
+        <RouterProvider router={router} />
+      </Provider>
+    </StrictMode>
+  )
+})

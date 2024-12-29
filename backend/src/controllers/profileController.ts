@@ -74,10 +74,10 @@ export const profileController = {
           
           // Insert user if not exists
           await client.query(
-            `INSERT INTO users (id, email)
-             VALUES ($1, $2)
+            `INSERT INTO users (id, email, display_name)
+             VALUES ($1, $2, $3)
              ON CONFLICT (id) DO NOTHING`,
-            [userId, req.user?.email]
+            [userId, req.user?.email, req.user?.email?.split('@')[0]]
           );
 
           // Insert profile if not exists
@@ -110,7 +110,6 @@ export const profileController = {
           await client.query('COMMIT');
           return res.json(newResult.rows[0]);
         }
-
         res.json(result.rows[0]);
       } catch (err) {
         await client.query('ROLLBACK');

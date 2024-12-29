@@ -8,15 +8,16 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import path from 'path';
 import fs from 'fs';
+import { sessionRoutes } from './routes/sessionRoutes.js';
+import userRoutes from './routes/userRoutes.js';
 
 const app = express();
 
 // CORS configuration with updated headers
 app.use(cors({
-  origin: 'http://localhost:5173',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  exposedHeaders: ['Content-Type'],
+  origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
   credentials: true
 }));
 
@@ -32,10 +33,15 @@ if (!fs.existsSync(uploadsDir)) {
 // Serve static files with absolute path
 app.use('/uploads', express.static(path.resolve(__dirname, '../uploads')));
 
-// Mount other routes
+// Mount routes
 app.use('/api', emailRouter);
-app.post('/api/users', userController.createUser);
-app.get('/api/users/:id', authMiddleware, userController.getUser);
-app.use('/api/profile', profileRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/profile', authMiddleware, profileRoutes);
+app.use('/api/sessions', authMiddleware, sessionRoutes);
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
 
 export default app; 

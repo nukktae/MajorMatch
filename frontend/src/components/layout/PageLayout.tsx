@@ -1,21 +1,16 @@
-import { motion } from 'framer-motion';
-import { ReactNode } from 'react';
+import { Navbar } from './Navbar';
 
 interface PageLayoutProps {
-  children: ReactNode;
-  className?: string;
+  children: React.ReactNode;
 }
 
-export function PageLayout({ children, className = '' }: PageLayoutProps) {
+export function PageLayout({ children }: PageLayoutProps) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.3 }}
-      className={`container mx-auto px-4 py-8 ${className}`}
-    >
-      {children}
-    </motion.div>
+    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-purple-50 to-fuchsia-50">
+      <Navbar />
+      <main>
+        {children}
+      </main>
+    </div>
   );
 } 

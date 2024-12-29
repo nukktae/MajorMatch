@@ -12,6 +12,21 @@ const Icon = ({ icon: IconComponent, className }: { icon: IconType; className?: 
   return <IconComponent size={className?.includes('w-5') ? 20 : 16} />
 }
 
+const CustomNavLink = ({ to, children }: { to: string; children: React.ReactNode }) => {
+  return (
+    <Link 
+      to={to} 
+      className="nav-link relative group"
+    >
+      {children}
+      <motion.div 
+        className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-violet-600 to-fuchsia-500 
+                   group-hover:w-full transition-all duration-300"
+      />
+    </Link>
+  )
+}
+
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const { scrollY } = useScroll();
@@ -75,26 +90,26 @@ export function Navbar() {
           <div className="flex items-center gap-6">
             {!isScrolled ? (
               <>
-                <NavLink to="/assessments">
+                <CustomNavLink to="/assessments">
                   <span className="flex items-center gap-2">
                     <Icon icon={FiBook} />
                     Assessments
                   </span>
-                </NavLink>
-                <NavLink to="/challenges">
+                </CustomNavLink>
+                <CustomNavLink to="/challenges">
                   <span className="flex items-center gap-2">
                     <Icon icon={FiAward} />
                     Challenges
                   </span>
-                </NavLink>
-                <NavLink to="/mentors">
+                </CustomNavLink>
+                <CustomNavLink to="/mentors">
                   <span className="flex items-center gap-2">
                     <Icon icon={FiUsers} />
                     Mentors
                     <span className="px-2 py-0.5 text-xs font-medium bg-gradient-to-r from-violet-600 to-fuchsia-500 
                                  text-white rounded-full">New</span>
                   </span>
-                </NavLink>
+                </CustomNavLink>
               </>
             ) : (
               <button 
@@ -145,20 +160,5 @@ export function Navbar() {
         </div>
       </div>
     </motion.nav>
-  )
-}
-
-function NavLink({ to, children }: { to: string; children: React.ReactNode }) {
-  return (
-    <Link 
-      to={to} 
-      className="nav-link relative group"
-    >
-      {children}
-      <motion.div 
-        className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-violet-600 to-fuchsia-500 
-                   group-hover:w-full transition-all duration-300"
-      />
-    </Link>
   )
 } 

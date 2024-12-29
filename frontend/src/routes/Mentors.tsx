@@ -1,5 +1,4 @@
 import { motion } from 'framer-motion';
-import { PageLayout } from '../components/layout/PageLayout';
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { mentors, type Mentor } from '../data/mentors';
@@ -17,66 +16,60 @@ export function Mentors() {
   });
 
   return (
-    <PageLayout>
-      <div className="min-h-[calc(100vh-4rem)] relative">
-        {/* Background Elements */}
-        <div className="absolute -z-10 top-40 right-20 w-96 h-96 bg-violet-200/30 rounded-full blur-5xl animate-float" />
-        <div className="absolute -z-10 bottom-40 left-20 w-96 h-96 bg-fuchsia-200/30 rounded-full blur-5xl animate-float-delayed" />
+    <div className="min-h-screen bg-gradient-to-b from-violet-50 to-white">
+      <div className="max-w-6xl mx-auto px-4 py-20">
+        {/* Hero Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center space-y-6 mb-20"
+        >
+          <h1 className="text-5xl font-bold">
+            <span className="gradient-text">Connect with Expert Mentors</span>
+          </h1>
+          <p className="text-xl text-slate-600 max-w-3xl mx-auto">
+            Get personalized guidance from experienced professionals in your field of interest.
+          </p>
+        </motion.div>
 
-        <div className="max-w-6xl mx-auto px-4 py-20">
-          {/* Hero Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center space-y-6 mb-20"
-          >
-            <h1 className="text-5xl font-bold">
-              <span className="gradient-text">Connect with Expert Mentors</span>
-            </h1>
-            <p className="text-xl text-slate-600 max-w-3xl mx-auto">
-              Get personalized guidance from experienced professionals in your field of interest.
-            </p>
-          </motion.div>
-
-          {/* Search and Filter */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="glass-card p-6 mb-12"
-          >
-            <div className="flex flex-col md:flex-row gap-4">
-              <input
-                type="text"
-                placeholder="Search mentors..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="flex-1 px-4 py-2 rounded-xl border border-violet-200 focus:border-violet-400 
-                         focus:outline-none focus:ring-2 focus:ring-violet-200"
-              />
-              <select
-                value={selectedField}
-                onChange={(e) => setSelectedField(e.target.value)}
-                className="px-4 py-2 rounded-xl border border-violet-200 focus:border-violet-400 
-                         focus:outline-none focus:ring-2 focus:ring-violet-200"
-              >
-                <option value="">All Fields</option>
-                <option value="Biomedical Engineering">Biomedical Engineering</option>
-                <option value="Software Engineering">Software Engineering</option>
-                <option value="Design & Psychology">Design & Psychology</option>
-              </select>
-            </div>
-          </motion.div>
-
-          {/* Mentors Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredMentors.map((mentor, index) => (
-              <MentorCard key={mentor.id} mentor={mentor} delay={index * 0.1} />
-            ))}
+        {/* Search and Filter */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="glass-card p-6 mb-12"
+        >
+          <div className="flex flex-col md:flex-row gap-4">
+            <input
+              type="text"
+              placeholder="Search mentors..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="flex-1 px-4 py-2 rounded-xl border border-violet-200 focus:border-violet-400 
+                       focus:outline-none focus:ring-2 focus:ring-violet-200"
+            />
+            <select
+              value={selectedField}
+              onChange={(e) => setSelectedField(e.target.value)}
+              className="px-4 py-2 rounded-xl border border-violet-200 focus:border-violet-400 
+                       focus:outline-none focus:ring-2 focus:ring-violet-200"
+            >
+              <option value="">All Fields</option>
+              <option value="Biomedical Engineering">Biomedical Engineering</option>
+              <option value="Software Engineering">Software Engineering</option>
+              <option value="Design & Psychology">Design & Psychology</option>
+            </select>
           </div>
+        </motion.div>
+
+        {/* Mentors Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {filteredMentors.map((mentor, index) => (
+            <MentorCard key={mentor.id} mentor={mentor} delay={index * 0.1} />
+          ))}
         </div>
       </div>
-    </PageLayout>
+    </div>
   );
 }
 

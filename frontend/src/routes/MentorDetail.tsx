@@ -8,6 +8,8 @@ import { BookingSection } from '../components/BookingSection';
 import mentorVideo from '../assets/videos/IMG_1482.mp4';
 import { MentorVideo } from '../components/MentorVideo';
 import caseyImage from '../assets/videos/caseylee.png';
+import { API_BASE_URL } from '../config/api';
+import { getAuthToken } from '../utils/auth';
 
 interface Mentor {
   id: string;
@@ -55,6 +57,26 @@ export function MentorDetail() {
 
   const handleBookSession = async (date: Date, time: string, message: string) => {
     try {
+      // First create the session
+      const sessionResponse = await fetch(`${API_BASE_URL}/api/sessions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${await getAuthToken()}`
+        },
+        body: JSON.stringify({
+          mentorId: mentor.id,
+          date,
+          time,
+          message
+        })
+      });
+
+      if (!sessionResponse.ok) {
+        throw new Error('Failed to create session');
+      }
+
+      // Then send the email notification
       const emailData = {
         to: mentor.email,
         subject: `New Mentoring Session Request - ${date.toLocaleDateString()}`,
@@ -69,7 +91,7 @@ export function MentorDetail() {
         `
       };
 
-      const response = await fetch('/api/send-email', {
+      const emailResponse = await fetch(`${API_BASE_URL}/api/send-email`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -77,16 +99,15 @@ export function MentorDetail() {
         body: JSON.stringify(emailData)
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.details || data.error || 'Failed to send email');
+      if (!emailResponse.ok) {
+        const errorData = await emailResponse.json();
+        throw new Error(errorData.details || errorData.error || 'Failed to send email');
       }
 
       alert('Session request sent successfully! The mentor will respond shortly.');
       
     } catch (error) {
-      console.error('Error sending email:', error);
+      console.error('Error creating session:', error);
       alert(error instanceof Error ? error.message : 'Failed to send session request. Please try again.');
     }
   };

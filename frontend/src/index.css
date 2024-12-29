@@ -45,16 +45,11 @@
   }
   
   .gradient-text {
-    @apply bg-gradient-to-r from-violet-800 to-fuchsia-700
-           text-transparent bg-clip-text font-extrabold;
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-violet-600 to-fuchsia-500;
   }
 
   .nav-link {
-    @apply text-slate-700 hover:text-violet-700 
-           transition-all duration-300 relative font-medium
-           after:absolute after:bottom-0 after:left-0 
-           after:w-0 after:h-0.5 after:bg-violet-500
-           hover:after:w-full after:transition-all after:duration-300;
+    @apply text-slate-700 hover:text-violet-700 transition-colors;
   }
 }
 
