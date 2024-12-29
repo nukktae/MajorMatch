@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import { profileRoutes } from './routes/profileRoutes.js';
+import path from 'path';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -22,6 +23,8 @@ app.use('/api/profile', profileRoutes);
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
+
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);

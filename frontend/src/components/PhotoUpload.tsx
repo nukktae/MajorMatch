@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { FiCamera, FiUpload } from 'react-icons/fi';
 import { profileService } from '../services/profile';
+import { API_BASE_URL } from '../config/api';
 
 interface Props {
   currentPhotoUrl: string | null;
@@ -36,10 +37,7 @@ export function PhotoUpload({ currentPhotoUrl, onPhotoUpdate, className }: Props
       <div className="w-32 h-32 rounded-full overflow-hidden bg-violet-100">
         {currentPhotoUrl ? (
           <img 
-            src={currentPhotoUrl?.startsWith('/uploads') 
-              ? `http://localhost:3000${currentPhotoUrl}`
-              : currentPhotoUrl
-            } 
+            src={`${API_BASE_URL}${currentPhotoUrl}`}
             alt="Profile" 
             className="w-full h-full object-cover"
           />

@@ -6,7 +6,6 @@ import { auth } from '../config/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { EditProfileForm } from '../components/EditProfileForm';
 import type { Profile } from '../types/Profile';
-import { PhotoUpload } from '../components/PhotoUpload';
 import {
   ExclamationTriangleIcon as ExclamationCircleIcon,
   CameraIcon,
@@ -17,6 +16,7 @@ import {
   SparklesIcon
 } from '@heroicons/react/24/outline';
 import { DeleteConfirmModal } from '../components/DeleteConfirmModal';
+import { API_BASE_URL } from '../config/api';
 
 function ErrorFallback({ error, resetErrorBoundary }: { error: Error; resetErrorBoundary: () => void }) {
   return (
@@ -228,7 +228,6 @@ export function Profile() {
       className="min-h-screen bg-gradient-to-br from-slate-50 to-violet-50/30 py-8 px-4"
     >
       <div className="max-w-5xl mx-auto space-y-6">
-        {/* Profile Header */}
         <motion.div 
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -240,24 +239,19 @@ export function Profile() {
                 whileHover={{ scale: 1.02 }}
                 className="relative"
               >
-                <PhotoUpload
-                  currentPhotoUrl={profile?.photo_url}
-                  onPhotoUpdate={(url) => {
-                    console.log('Photo updated:', url);
-                    setProfile(prev => {
-                      const updated = prev ? {...prev, photo_url: url} : null;
-                      console.log('Updated profile:', updated);
-                      return updated;
-                    });
-                  }}
-                  className="h-24 w-24 rounded-xl ring-2 ring-slate-100 shadow-sm object-cover"
-                />
-                <motion.div 
-                  whileHover={{ scale: 1.05 }}
-                  className="absolute -bottom-2 -right-2 bg-violet-500 text-white p-2 rounded-lg shadow-sm"
-                >
-                  <CameraIcon className="h-4 w-4" />
-                </motion.div>
+                <div className="w-32 h-32 rounded-full overflow-hidden bg-violet-100">
+                  {profile?.photo_url ? (
+                    <img 
+                      src={`${API_BASE_URL}${profile.photo_url}`}
+                      alt="Profile" 
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-violet-400">
+                      <CameraIcon className="h-8 w-8" />
+                    </div>
+                  )}
+                </div>
               </motion.div>
 
               <div className="flex-1 space-y-4">
@@ -296,7 +290,6 @@ export function Profile() {
           </div>
         </motion.div>
 
-        {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <AnimatePresence>
             {[
@@ -335,7 +328,6 @@ export function Profile() {
         </div>
       </div>
 
-      {/* Keep existing modals */}
       <EditProfileForm
         isOpen={isEditing}
         onClose={() => setIsEditing(false)}
@@ -353,7 +345,6 @@ export function Profile() {
   );
 }
 
-// Wrap the export with ErrorBoundary
 export default function ProfileWithErrorBoundary() {
   return (
     <ErrorBoundary
