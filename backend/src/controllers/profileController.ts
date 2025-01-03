@@ -57,7 +57,6 @@ export const profileController = {
             u.display_name,
             u.photo_url,
             u.custom_user_id,
-            u.nickname,
             up.major,
             up.interests,
             up.completed_assessments,
@@ -96,7 +95,6 @@ export const profileController = {
               u.display_name,
               u.photo_url,
               u.custom_user_id,
-              u.nickname,
               up.major,
               up.interests,
               up.completed_assessments,
@@ -125,19 +123,13 @@ export const profileController = {
 
   async updateProfile(req: AuthRequest, res: Response) {
     const userId = req.user?.uid;
-    const { major, interests, custom_user_id, nickname } = req.body;
+    const { major, interests, custom_user_id, display_name } = req.body;
 
     try {
-      // Validate inputs
-      if (custom_user_id && !/^[a-zA-Z0-9_]{1,30}$/.test(custom_user_id)) {
+      // Validate display_name
+      if (!display_name || display_name.trim().length === 0) {
         return res.status(400).json({ 
-          error: 'Invalid custom user ID format' 
-        });
-      }
-
-      if (nickname && nickname.length > 50) {
-        return res.status(400).json({ 
-          error: 'Nickname too long' 
+          error: 'Display name is required' 
         });
       }
 
@@ -146,25 +138,14 @@ export const profileController = {
       try {
         await client.query('BEGIN');
 
-        // Check if custom_user_id is already taken
-        if (custom_user_id) {
-          const existing = await client.query(
-            'SELECT id FROM users WHERE custom_user_id = $1 AND id != $2',
-            [custom_user_id, userId]
-          );
-          if (existing.rows.length > 0) {
-            throw new Error('This user ID is already taken');
-          }
-        }
-
-        // Update users table
+        // Update users table with display_name
         await client.query(
           `UPDATE users 
            SET custom_user_id = $1, 
-               nickname = $2, 
+               display_name = $2,
                updated_at = CURRENT_TIMESTAMP
            WHERE id = $3`,
-          [custom_user_id || null, nickname || null, userId]
+          [custom_user_id || null, display_name.trim(), userId]
         );
 
         // Update user_profiles table
@@ -185,7 +166,6 @@ export const profileController = {
             u.display_name,
             u.photo_url,
             u.custom_user_id,
-            u.nickname,
             up.major,
             up.interests,
             up.completed_assessments,
@@ -217,14 +197,33 @@ export const profileController = {
     const { results } = req.body;
 
     try {
+      // First check if profile exists
+      const profileCheck = await pool.query(
+        'SELECT 1 FROM user_profiles WHERE user_id = $1',
+        [userId]
+      );
+
+      if (profileCheck.rows.length === 0) {
+        // Create profile if it doesn't exist
+        const newProfile = await pool.query(
+          `INSERT INTO user_profiles 
+           (user_id, assessment_results, completed_assessments)
+           VALUES ($1, $2::jsonb, 1)
+           RETURNING *`,
+          [userId, JSON.stringify(results)]
+        );
+        return res.json(newProfile.rows[0]);
+      }
+
+      // Update existing profile
       const result = await pool.query(
         `UPDATE user_profiles 
-         SET assessment_results = $1, 
+         SET assessment_results = $1::jsonb, 
              completed_assessments = completed_assessments + 1,
              updated_at = CURRENT_TIMESTAMP
          WHERE user_id = $2
          RETURNING *`,
-        [results, userId]
+        [JSON.stringify(results), userId]
       );
 
       res.json(result.rows[0]);
@@ -293,31 +292,6 @@ export const profileController = {
       console.error('Error updating custom user ID:', err);
       res.status(500).json({ 
         error: 'Failed to update user ID',
-        details: process.env.NODE_ENV === 'development' 
-          ? (err instanceof Error ? err.message : String(err))
-          : undefined
-      });
-    }
-  },
-
-  async updateNickname(req: AuthRequest, res: Response) {
-    const userId = req.user?.uid;
-    const { nickname } = req.body;
-
-    try {
-      const result = await pool.query(
-        `UPDATE users 
-         SET nickname = $1, updated_at = CURRENT_TIMESTAMP
-         WHERE id = $2
-         RETURNING *`,
-        [nickname, userId]
-      );
-
-      res.json(result.rows[0]);
-    } catch (err) {
-      console.error('Error updating nickname:', err);
-      res.status(500).json({ 
-        error: 'Failed to update nickname',
         details: process.env.NODE_ENV === 'development' 
           ? (err instanceof Error ? err.message : String(err))
           : undefined

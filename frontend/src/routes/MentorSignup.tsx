@@ -52,51 +52,59 @@ export function MentorSignup() {
       // Get token for API request
       const token = await getAuthToken();
 
-      // Create mentor profile in our backend
-      const response = await fetch(`${API_BASE_URL}/api/users/mentor`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          userId: userCredential.user.uid,
-          name: formData.name,
-          title: formData.title,
-          field: formData.field,
-          experience: formData.experience,
-          availability: formData.availability,
-          specialties: formData.specialties,
-          about: formData.about,
-          role: 'mentor'
-        })
-      });
+      try {
+        // Create mentor profile in our backend
+        const response = await fetch(`${API_BASE_URL}/api/mentors`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            userId: userCredential.user.uid,
+            name: formData.name,
+            title: formData.title,
+            field: formData.field,
+            experience: formData.experience,
+            availability: formData.availability,
+            specialties: formData.specialties,
+            about: formData.about,
+            role: 'mentor'
+          })
+        });
 
-      if (!response.ok) {
-        throw new Error('Failed to create mentor profile');
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to create mentor profile');
+        }
+
+        // Update custom claims in Firebase
+        const updateRoleResponse = await fetch(`${API_BASE_URL}/api/auth/set-role`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            role: 'mentor',
+            userId: userCredential.user.uid
+          })
+        });
+
+        if (!updateRoleResponse.ok) {
+          throw new Error('Failed to set mentor role');
+        }
+
+        // Force token refresh to get new custom claims
+        await userCredential.user.getIdToken(true);
+        
+        // Navigate to mentor dashboard
+        navigate('/mentor/dashboard');
+      } catch (apiError) {
+        // If backend API fails, delete the Firebase user
+        await userCredential.user.delete();
+        throw new Error('Failed to create mentor profile. Please try again.');
       }
-
-      // Update custom claims in Firebase
-      const updateRoleResponse = await fetch(`${API_BASE_URL}/api/auth/set-role`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          role: 'mentor'
-        })
-      });
-
-      if (!updateRoleResponse.ok) {
-        throw new Error('Failed to set mentor role');
-      }
-
-      // Force token refresh to get new custom claims
-      await userCredential.user.getIdToken(true);
-      
-      // Navigate to mentor dashboard
-      navigate('/mentor/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {

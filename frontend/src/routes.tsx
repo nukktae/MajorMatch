@@ -10,9 +10,14 @@ import { Mentors } from './routes/Mentors'
 import { MentorDetail } from './routes/MentorDetail'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { PageLayout } from './components/layout/PageLayout'
-import { RouteObject } from 'react-router-dom'
+import { RouteObject, Outlet } from 'react-router-dom'
 import { LearnMore } from './routes/LearnMore'
 import { MentorSignup } from './routes/MentorSignup'
+import { MentorLayout } from './layouts/MentorLayout'
+import { MentorDashboard } from './routes/mentor/MentorDashboard'
+import { MentorStudents } from './routes/mentor/MentorStudents'
+import { MentorSchedule } from './routes/mentor/MentorSchedule'
+import { MentorProfile } from './routes/mentor/MentorProfile'
 
 export const routes: RouteObject[] = [
   {
@@ -62,6 +67,28 @@ export const routes: RouteObject[] = [
       {
         path: 'learn-more',
         element: <PageLayout><LearnMore /></PageLayout>
+      },
+      {
+        path: '/mentor',
+        element: <MentorLayout />,
+        children: [
+          {
+            path: 'dashboard',
+            element: <MentorDashboard />
+          },
+          {
+            path: 'schedule',
+            element: <MentorSchedule />
+          },
+          {
+            path: 'students',
+            element: <MentorStudents />
+          },
+          {
+            path: 'profile',
+            element: <MentorProfile />
+          }
+        ]
       },
       {
         path: '*',

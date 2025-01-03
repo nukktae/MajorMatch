@@ -70,7 +70,7 @@ export function EditProfileForm({ isOpen, onClose, onSave, profile, isLoading }:
   const [majorInput, setMajorInput] = useState(profile?.major || '');
   const [selectedInterests, setSelectedInterests] = useState<string[]>(profile.interests || []);
   const [showMajorSuggestions, setShowMajorSuggestions] = useState(false);
-  const [displayName, setDisplayName] = useState(profile.display_name || auth.currentUser?.displayName || '');
+  const [displayName, setDisplayName] = useState(profile.display_name || '');
 
   // Add debounce function with proper typing
   const debounce = (func: (...args: any[]) => void, wait: number) => {
@@ -122,18 +122,25 @@ export function EditProfileForm({ isOpen, onClose, onSave, profile, isLoading }:
     debouncedUsernameCheck(value);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (usernameError) return;
     
-    const formData = new FormData(e.target as HTMLFormElement);
-    onSave({
-      display_name: displayName,
-      nickname: formData.get('nickname') as string,
-      major: majorInput,
-      custom_user_id: formData.get('username') as string,
-      interests: selectedInterests
-    });
+    const trimmedDisplayName = displayName.trim();
+    if (!trimmedDisplayName) {
+      return;
+    }
+    
+    try {
+      const updatedProfile = await onSave({
+        display_name: trimmedDisplayName,
+        custom_user_id: username,
+        major: majorInput,
+        interests: selectedInterests
+      });
+      onClose();
+    } catch (err) {
+      console.error('Failed to update profile:', err);
+    }
   };
 
   const handleMajorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -190,10 +197,12 @@ export function EditProfileForm({ isOpen, onClose, onSave, profile, isLoading }:
                             name="display_name"
                             value={displayName}
                             onChange={(e) => setDisplayName(e.target.value)}
+                            required
+                            minLength={1}
+                            maxLength={50}
                             className="w-full px-4 py-3 rounded-xl border border-slate-200 
                                      focus:outline-none focus:ring-2 focus:ring-violet-500/20 
                                      focus:border-violet-500"
-                            placeholder="Enter your display name"
                           />
                         </div>
 

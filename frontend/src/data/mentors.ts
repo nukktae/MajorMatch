@@ -17,7 +17,7 @@ export const mentors = [
       'Chinese Universities'
     ],
     rating: 4.8,
-    imageUrl: '/mentors/anu.jpg',
+    imageUrl: '/src/assets/videos/mypic.JPG',
     about: 'A passionate Software Engineering professional dedicated to helping students navigate their academic and career paths.'
   },
   {

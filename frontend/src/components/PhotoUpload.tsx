@@ -32,12 +32,17 @@ export function PhotoUpload({ currentPhotoUrl, onPhotoUpdate, className }: Props
     }
   };
 
+  const getPhotoUrl = (url: string) => {
+    if (!url) return null;
+    return url.startsWith('http') ? url : `${API_BASE_URL}${url}`;
+  };
+
   return (
     <div className="relative group">
       <div className="w-32 h-32 rounded-full overflow-hidden bg-violet-100">
         {currentPhotoUrl ? (
           <img 
-            src={`${API_BASE_URL}${currentPhotoUrl}`}
+            src={getPhotoUrl(currentPhotoUrl)}
             alt="Profile" 
             className="w-full h-full object-cover"
           />

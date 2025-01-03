@@ -1,6 +1,5 @@
 import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { PageLayout } from '../components/layout/PageLayout';
 import { challenges } from '../data/challenges';
 import { Challenge } from '../types/challenge';
 import confetti from 'canvas-confetti';
@@ -140,16 +139,14 @@ export function ChallengeDetail() {
 
   if (!challenge) {
     return (
-      <PageLayout>
-        <div className="max-w-4xl mx-auto px-4 py-8">
-          <h1 className="text-2xl font-bold text-red-600">Challenge not found</h1>
-        </div>
-      </PageLayout>
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <h1 className="text-2xl font-bold text-red-600">Challenge not found</h1>
+      </div>
     );
   }
 
   return (
-    <PageLayout>
+    <div className="max-w-7xl mx-auto px-4 py-8">
       <motion.div
         variants={containerVariants}
         initial="hidden"
@@ -261,7 +258,7 @@ export function ChallengeDetail() {
           />
         </motion.div>
       </motion.div>
-    </PageLayout>
+    </div>
   );
 }
 

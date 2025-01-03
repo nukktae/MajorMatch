@@ -1,5 +1,6 @@
 import { auth } from '../config/firebase';
 import type { Profile } from '../types/Profile';
+import type { AssessmentResult } from '../types/assessment';
 import { 
   EmailAuthProvider,
   reauthenticateWithCredential,
@@ -45,7 +46,7 @@ export const profileService = {
         major: data.major || null,
         interests: Array.isArray(data.interests) ? data.interests : [],
         custom_user_id: data.custom_user_id || null,
-        nickname: data.nickname || null
+        display_name: data.display_name || null
       })
     });
 
@@ -95,6 +96,7 @@ export const profileService = {
       const error = await response.text();
       throw new Error(error || 'Failed to delete assessment results');
     }
+
     return response.json();
   },
 
@@ -119,23 +121,25 @@ export const profileService = {
     const user = auth.currentUser;
     if (!user) throw new Error('No authenticated user');
 
-    const token = await user.getIdToken();
     const formData = new FormData();
     formData.append('photo', file);
 
+    const token = await user.getIdToken();
     const response = await fetch(`${API_BASE_URL}/api/profile/photo`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${token}`
+        'Authorization': `Bearer ${token}`,
       },
       body: formData
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to update profile photo');
+      const error = await response.text();
+      throw new Error(error || 'Failed to upload photo');
     }
-    return response.json();
+
+    const result = await response.json();
+    return result;
   },
 
   async deleteUser() {
@@ -198,5 +202,26 @@ export const profileService = {
       console.error('Error checking username:', error);
       throw error;
     }
+  },
+
+  async updateAssessmentResults(results: AssessmentResult[]) {
+    const user = auth.currentUser;
+    if (!user) throw new Error('No authenticated user');
+
+    const token = await user.getIdToken();
+    const response = await fetch(`${API_BASE_URL}/api/profile/assessment-results`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ results })
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to update assessment results');
+    }
+
+    return response.json();
   }
 }; 

@@ -1,32 +1,28 @@
+import { Navigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { auth } from '../config/firebase';
-import { onAuthStateChanged } from 'firebase/auth';
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(true);
+  const { user, loading } = useAuth();
+  const location = useLocation();
+  const [shouldRender, setShouldRender] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        navigate('/auth');
-      }
-      setIsLoading(false);
-    });
+    if (!loading && !user) {
+      // Set a small delay before unmounting
+      const timer = setTimeout(() => {
+        setShouldRender(false);
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [user, loading]);
 
-    return () => unsubscribe();
-  }, [navigate]);
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-16 h-16 relative">
-          <div className="absolute inset-0 rounded-full border-4 border-violet-200" />
-          <div className="absolute inset-0 rounded-full border-4 border-violet-600 border-t-transparent animate-spin" />
-        </div>
-      </div>
-    );
+  if (!shouldRender || !user) {
+    return <Navigate to="/auth" replace state={{ from: location }} />;
   }
 
   return <>{children}</>;

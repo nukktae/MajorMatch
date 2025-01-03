@@ -18,7 +18,14 @@ export const assessmentService = {
         }))
       };
 
-      const updatedProfile = await profileService.updateAssessmentResults([assessmentResult]);
+      // Get current profile first
+      const currentProfile = await profileService.getProfile();
+      const currentResults = currentProfile.assessment_results || [];
+      
+      // Append new result to existing results
+      const updatedResults = [...currentResults, assessmentResult];
+      
+      const updatedProfile = await profileService.updateAssessment(updatedResults);
       return updatedProfile;
     } catch (err) {
       console.error('Failed to save assessment results:', err);

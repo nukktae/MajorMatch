@@ -9,11 +9,11 @@ export interface Major {
   averageSalary: string;
 }
 
-export interface ResultData {
+export interface AssessmentResult {
+  date: string;
   majors: Major[];
 }
 
-export interface AssessmentResult {
-  date: string;
+export interface ResultData {
   majors: Major[];
 } 

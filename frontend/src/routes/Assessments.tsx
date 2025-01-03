@@ -3,6 +3,11 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ASSESSMENT_QUESTIONS } from '../components/AssessmentQuestion';
 import { FiFileText, FiZap, FiTarget } from 'react-icons/fi';
+import { IconType } from 'react-icons';
+
+const Icon = ({ icon: IconComponent }: { icon: IconType }) => {
+  return <IconComponent size={24} />;
+};
 
 export function Assessments() {
   const [started, setStarted] = useState(false);
@@ -67,21 +72,21 @@ export function Assessments() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="p-4 bg-white/50 rounded-xl hover:bg-white/70 transition-colors">
                   <div className="text-violet-600 mb-2">
-                    <FiFileText className="w-6 h-6" />
+                    <Icon icon={FiFileText} />
                   </div>
                   <h3 className="font-medium mb-1">5 Simple Questions</h3>
                   <p className="text-sm text-slate-600">Quick questions about your interests and preferences</p>
                 </div>
                 <div className="p-4 bg-white/50 rounded-xl hover:bg-white/70 transition-colors">
                   <div className="text-violet-600 mb-2">
-                    <FiZap className="w-6 h-6" />
+                    <Icon icon={FiZap} />
                   </div>
                   <h3 className="font-medium mb-1">AI Analysis</h3>
                   <p className="text-sm text-slate-600">Advanced AI matches your profile to potential careers</p>
                 </div>
                 <div className="p-4 bg-white/50 rounded-xl hover:bg-white/70 transition-colors">
                   <div className="text-violet-600 mb-2">
-                    <FiTarget className="w-6 h-6" />
+                    <Icon icon={FiTarget} />
                   </div>
                   <h3 className="font-medium mb-1">Personalized Results</h3>
                   <p className="text-sm text-slate-600">Get tailored major and career recommendations</p>

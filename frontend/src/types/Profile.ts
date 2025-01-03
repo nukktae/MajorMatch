@@ -11,7 +11,12 @@ export interface Profile {
     majors: Array<{
       name: string;
       description: string;
+      whyGoodFit: string;
+      careers: string[];
       skills: string[];
+      coursework: string[];
+      jobOutlook: string;
+      averageSalary: string;
     }>;
   }> | null;
   custom_user_id?: string;
