@@ -72,10 +72,25 @@ npm run dev
 
 ## 📱 Screenshots
 
-<div style="display: flex; gap: 10px; margin-bottom: 20px;">
-  <img src="screenshot1.png" width="200" alt="Dashboard" />
-  <img src="screenshot2.png" width="200" alt="Assessment" />
-  <img src="screenshot3.png" width="200" alt="Mentorship" />
+<div class="screenshot-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin: 40px 0; background: var(--bg-gradient); padding: 20px; border-radius: 16px;">
+    <div style="border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1); transition: transform 0.3s;">
+        <img src="src/assets/demo/home.png" alt="Home Dashboard" style="width: 100%; height: auto;" />
+    </div>
+    <div style="border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1); transition: transform 0.3s;">
+        <img src="src/assets/demo/aiassistant.png" alt="AI Assistant Interface" style="width: 100%; height: auto;" />
+    </div>
+    <div style="border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1); transition: transform 0.3s;">
+        <img src="src/assets/demo/careerchallenges.png" alt="Career Challenges" style="width: 100%; height: auto;" />
+    </div>
+    <div style="border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1); transition: transform 0.3s;">
+        <img src="src/assets/demo/assessmentquestions.png" alt="Assessment Questions" style="width: 100%; height: auto;" />
+    </div>
+    <div style="border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1); transition: transform 0.3s;">
+        <img src="src/assets/demo/assessmentresult.png" alt="Assessment Results" style="width: 100%; height: auto;" />
+    </div>
+    <div style="border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1); transition: transform 0.3s;">
+        <img src="src/assets/demo/profile.png" alt="User Profile" style="width: 100%; height: auto;" />
+    </div>
 </div>
 
 ## 🎯 Future Enhancements
