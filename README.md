@@ -46,26 +46,22 @@ An intelligent career guidance platform that helps students discover their ideal
 ## 🚀 Getting Started
 
 1. Clone the repository:
-
-``bash
+```bash
 git clone https://github.com/yourusername/major-match-ai.git
-````
+```
 
 2. Install dependencies:
-
 ```bash
 cd major-match-ai
 npm install
 ```
 
 3. Set up environment variables:
-
 ```bash
 cp .env.example .env
 ```
 
 4. Start the development server:
-
 ```bash
 npm run dev
 ```
