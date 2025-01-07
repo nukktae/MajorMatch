@@ -152,9 +152,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🙋‍♂️ Author
 
 **Your Name**
-- Portfolio: [yourportfolio.com](https://yourportfolio.com)
-- LinkedIn: [linkedin.com/in/yourusername](https://linkedin.com/in/yourusername)
-- Twitter: [@yourusername](https://twitter.com/yourusername)
+- Portfolio: [yourportfolio.com](https://anubilegdemberel.com)
+- LinkedIn: [linkedin.com/in/yourusername](https://www.linkedin.com/in/anu-bilegdemberel-445366318/)
 
 ---
 

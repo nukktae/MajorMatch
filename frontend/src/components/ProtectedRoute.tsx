@@ -9,7 +9,6 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!loading && !user) {
-      // Set a small delay before unmounting
       const timer = setTimeout(() => {
         setShouldRender(false);
       }, 50);

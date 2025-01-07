@@ -13,9 +13,8 @@ export function useAuth() {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         try {
-          // Get profile which will create user if doesn't exist
+          // Example usage of API_BASE_URL
           const profile = await profileService.getProfile();
-          
           setUser({
             id: firebaseUser.uid,
             email: firebaseUser.email || '',
