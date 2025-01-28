@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "reset-db": "ts-node src/db/reset.ts",
-    "dev": "ts-node src/index.ts",
+    "reset-db": "NODE_OPTIONS='--loader ts-node/esm' ts-node src/db/reset.ts",
+    "dev": "NODE_OPTIONS='--loader ts-node/esm' ts-node src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js"
   },

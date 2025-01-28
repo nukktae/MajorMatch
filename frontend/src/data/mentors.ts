@@ -17,7 +17,7 @@ export const mentors = [
       'Chinese Universities'
     ],
     rating: 4.8,
-    imageUrl: '/src/assets/videos/mypic.JPG',
+    imageUrl: '/assets/mypic.JPG',
     about: 'A passionate Software Engineering professional dedicated to helping students navigate their academic and career paths.'
   },
   {
@@ -38,7 +38,7 @@ export const mentors = [
       'Mental Health Studies'
     ],
     rating: 4.9,
-    imageUrl: '/mentors/casey.jpg',
+    imageUrl: '/assets/caseylee.png',
     about: 'Experienced UX Designer and Psychology Researcher helping students bridge the gap between design thinking and human behavior.'
   }
 ];

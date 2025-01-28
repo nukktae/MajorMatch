@@ -39,11 +39,12 @@ export function Auth() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
-        navigate('/');
+        const from = (location.state as any)?.from?.pathname || '/';
+        navigate(from, { replace: true });
       }
     });
     return () => unsubscribe();
-  }, [navigate]);
+  }, [navigate, location]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({
@@ -175,14 +176,6 @@ export function Auth() {
                   isLogin ? 'Sign In' : 'Sign Up'
                 )}
               </button>
-
-              <Link
-                to="/mentor-signup"
-                className="w-full flex justify-center py-3 px-4 border-2 border-violet-200 rounded-xl
-                         text-sm font-medium text-violet-600 hover:bg-violet-50 transition-colors"
-              >
-                Sign Up as Mentor
-              </Link>
             </div>
 
             <div className="text-center">

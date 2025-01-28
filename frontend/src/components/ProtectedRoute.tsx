@@ -1,27 +1,26 @@
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
-import { useEffect, useState } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 
-export function ProtectedRoute({ children }: { children: React.ReactNode }) {
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+  requireRole?: string;
+}
+
+export function ProtectedRoute({ children, requireRole }: ProtectedRouteProps) {
   const { user, loading } = useAuth();
   const location = useLocation();
-  const [shouldRender, setShouldRender] = useState(true);
-
-  useEffect(() => {
-    if (!loading && !user) {
-      const timer = setTimeout(() => {
-        setShouldRender(false);
-      }, 50);
-      return () => clearTimeout(timer);
-    }
-  }, [user, loading]);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-violet-500"></div>
+      </div>
+    );
   }
 
-  if (!shouldRender || !user) {
-    return <Navigate to="/auth" replace state={{ from: location }} />;
+  if (!user) {
+    // Save the attempted URL
+    return <Navigate to="/auth" state={{ from: location }} replace />;
   }
 
   return <>{children}</>;

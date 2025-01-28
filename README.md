@@ -23,10 +23,6 @@ An intelligent career guidance platform that helps students discover their ideal
 <table>
   <tr>
     <td align="center" width="96">
-      <img src="https://skillicons.dev/icons?i=flutter" width="48" height="48" alt="Flutter" />
-      <br>Flutter
-    </td>
-    <td align="center" width="96">
       <img src="https://skillicons.dev/icons?i=nextjs" width="48" height="48" alt="Next.js" />
       <br>Next.js
     </td>

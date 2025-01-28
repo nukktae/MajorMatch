@@ -7,17 +7,9 @@ import { ChallengeDetail } from './routes/ChallengeDetail'
 import { Assessments } from './routes/Assessments'
 import { AssessmentResults } from './routes/AssessmentResults'
 import { Mentors } from './routes/Mentors'
-import { MentorDetail } from './routes/MentorDetail'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { PageLayout } from './components/layout/PageLayout'
-import { RouteObject, Outlet } from 'react-router-dom'
-import { LearnMore } from './routes/LearnMore'
-import { MentorSignup } from './routes/MentorSignup'
-import { MentorLayout } from './layouts/MentorLayout'
-import { MentorDashboard } from './routes/mentor/MentorDashboard'
-import { MentorStudents } from './routes/mentor/MentorStudents'
-import { MentorSchedule } from './routes/mentor/MentorSchedule'
-import { MentorProfile } from './routes/mentor/MentorProfile'
+import { RouteObject } from 'react-router-dom'
 
 export const routes: RouteObject[] = [
   {
@@ -27,10 +19,6 @@ export const routes: RouteObject[] = [
       {
         path: 'auth',
         element: <PageLayout><Auth /></PageLayout>
-      },
-      {
-        path: 'mentor-signup',
-        element: <PageLayout><MentorSignup /></PageLayout>
       },
       {
         path: '',
@@ -59,41 +47,7 @@ export const routes: RouteObject[] = [
       {
         path: 'mentors',
         element: <ProtectedRoute><PageLayout><Mentors /></PageLayout></ProtectedRoute>
-      },
-      {
-        path: 'mentors/:id',
-        element: <ProtectedRoute><PageLayout><MentorDetail /></PageLayout></ProtectedRoute>
-      },
-      {
-        path: 'learn-more',
-        element: <PageLayout><LearnMore /></PageLayout>
-      },
-      {
-        path: '/mentor',
-        element: <MentorLayout />,
-        children: [
-          {
-            path: 'dashboard',
-            element: <MentorDashboard />
-          },
-          {
-            path: 'schedule',
-            element: <MentorSchedule />
-          },
-          {
-            path: 'students',
-            element: <MentorStudents />
-          },
-          {
-            path: 'profile',
-            element: <MentorProfile />
-          }
-        ]
-      },
-      {
-        path: '*',
-        element: <PageLayout><Home /></PageLayout>
       }
     ]
   }
-] 
+]; 

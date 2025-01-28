@@ -1,4 +1,5 @@
 -- Users table
+
 CREATE TABLE IF NOT EXISTS users (
   id VARCHAR(255) PRIMARY KEY,
   email VARCHAR(255) UNIQUE NOT NULL,

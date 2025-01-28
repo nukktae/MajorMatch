@@ -1,5 +1,5 @@
-import pkg from 'pg';
-const { Client } = pkg;
+import pg from 'pg';
+const { Client } = pg;
 import { createUsersTable } from './migrations/001_create_users_table.js';
 import { createSessionsTable } from './migrations/002_create_sessions_table.js';
 import { createUserProfilesTable } from './migrations/003_create_user_profiles_table.js';
